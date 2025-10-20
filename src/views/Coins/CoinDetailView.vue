@@ -7,10 +7,10 @@
             <v-avatar color="primary" size="48" class="mr-4">
               <span class="white--text text-h5">{{ token.symbol ? token.symbol.charAt(0) : 'T' }}</span>
             </v-avatar>
-            <div>
-              <div class="text-h6">{{ token.name }} ({{ token.symbol }})</div>
-              <v-chip small class="mt-1" :color="token.type === 'wETH' ? 'blue' : 'green'" dark>{{ token.type }}</v-chip>
-            </div>
+
+            <div class="text-h6">{{ token.name }} ({{ token.symbol }})</div>
+            <v-chip small class="mt-1 ml-6" :color="token.type === 'wETH' ? 'blue' : 'green'" dark>{{ token.type }}</v-chip>
+
           </v-card-title>
           <v-divider></v-divider>
           <v-card-text class="pt-4">
@@ -57,7 +57,70 @@
           </v-card-text>
         </v-card>
 
+        <!-- 查询功能卡片 -->
+        <v-card class="mb-6" elevation="4">
+          <v-card-title class="text-h6">信息查询</v-card-title>
+          <v-divider></v-divider>
+          <v-row class="pa-4" align="start">
+            <!-- 查询余额 -->
+            <v-col cols="12" md="6">
+              <div class="text-subtitle-1 font-weight-medium mb-3 d-flex align-center">
+                <v-icon class="mr-2">mdi-wallet-outline</v-icon>
+                查询余额 (BalanceOf)
+              </div>
+              <v-text-field
+                v-model="balanceQuery.address"
+                label="账户地址"
+                outlined
+                dense
+                prepend-inner-icon="mdi-account-search-outline"
+                class="mb-2"
+              ></v-text-field>
+              <v-btn color="primary" @click="handleQueryBalance">
+                <v-icon left>mdi-magnify</v-icon>
+                查询
+              </v-btn>
+              <div v-if="balanceQuery.balance !== null" class="mt-4 body-1">
+                查询结果: <strong>{{ balanceQuery.balance }} {{ token.symbol }}</strong>
+              </div>
+            </v-col>
+
+            <!-- 查询授权额度 -->
+            <v-col cols="12" md="6">
+              <div class="text-subtitle-1 font-weight-medium mb-3 d-flex align-center">
+                <v-icon class="mr-2">mdi-account-lock-outline</v-icon>
+                查询授权额度 (Allowance)
+              </div>
+              <v-text-field
+                v-model="allowanceQuery.owner"
+                label="授权方地址 (Owner)"
+                outlined
+                dense
+                prepend-inner-icon="mdi-account-key-outline"
+                class="mb-2"
+              ></v-text-field>
+              <v-text-field
+                v-model="allowanceQuery.spender"
+                label="被授权方地址 (Spender)"
+                outlined
+                dense
+                prepend-inner-icon="mdi-account-check-outline"
+                class="mb-2"
+              ></v-text-field>
+              <v-btn color="primary" @click="handleQueryAllowance">
+                <v-icon left>mdi-magnify</v-icon>
+                查询
+              </v-btn>
+              <div v-if="allowanceQuery.allowance !== null" class="mt-4 body-1">
+                查询结果: <strong>{{ allowanceQuery.allowance }} {{ token.symbol }}</strong>
+              </div>
+            </v-col>
+          </v-row>
+        </v-card>
+
         <v-card elevation="4">
+          <v-card-title class="text-h6">函数调用</v-card-title>
+          <v-divider></v-divider>
           <v-tabs v-model="activeTab" background-color="primary" dark grow>
             <v-tab key="transfer">转账</v-tab>
             <v-tab key="transferFrom">授权转账</v-tab>
@@ -189,6 +252,15 @@ export default {
         to: '',
         amount: null,
       },
+      balanceQuery: {
+        address: '',
+        balance: null,
+      },
+      allowanceQuery: {
+        owner: '',
+        spender: '',
+        allowance: null,
+      },
     };
   },
   methods: {
@@ -218,6 +290,18 @@ export default {
     handleMint() {
       console.log('Mint:', this.mintData);
       // Add Web3/Ethers.js logic here
+    },
+    handleQueryBalance() {
+      console.log('Query Balance for:', this.balanceQuery.address);
+      // Add Web3/Ethers.js logic here
+      // Mock result:
+      this.balanceQuery.balance = (Math.random() * 1000).toFixed(4);
+    },
+    handleQueryAllowance() {
+      console.log('Query Allowance for:', this.allowanceQuery);
+      // Add Web3/Ethers.js logic here
+      // Mock result:
+      this.allowanceQuery.allowance = (Math.random() * 500).toFixed(4);
     },
     async copyAddress() {
       try {
