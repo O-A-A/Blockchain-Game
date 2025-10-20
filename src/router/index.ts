@@ -15,6 +15,16 @@ const router = createRouter({
             component: () => import('@/views/RegisterView.vue')
         },
         {
+            path: '/send',
+            name: 'Send',
+            component: () => import('@/views/SendView.vue')
+        },
+        {
+            path: '/swap',
+            name: 'Swap',
+            component: () => import('@/views/SwapView.vue')
+        },
+        {
             path: '/login',
             name: 'Login',
             component: () => import('@/views/LoginView.vue')
