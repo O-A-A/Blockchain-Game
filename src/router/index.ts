@@ -31,15 +31,9 @@ const router = createRouter({
             meta: { requiresAuth: true }
         },
         {
-            path: '/swap',
-            name: 'Swap',
-            component: () => import('@/views/SwapView.vue'),
-            meta: { requiresAuth: true }
-        },
-        {
-            path: '/send',
-            name: 'Send',
-            component: () => import('@/views/SendView.vue'),
+            path: '/coinlist',
+            name: 'CoinList',
+            component: () => import('@/views/CoinListView.vue'),
             meta: { requiresAuth: true }
         },
         {
