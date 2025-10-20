@@ -130,7 +130,7 @@ export default {
     };
   },
   methods: {
-    goToDetail(item) {
+    goToDetail(event, { item }) {
       this.$router.push(`/coindetail/${item.address}`);
     },
     goToDeploy() {

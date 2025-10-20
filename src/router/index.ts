@@ -33,7 +33,13 @@ const router = createRouter({
         {
             path: '/coinlist',
             name: 'CoinList',
-            component: () => import('@/views/CoinListView.vue'),
+            component: () => import('@/views/Coins/CoinListView.vue'),
+            meta: { requiresAuth: true }
+        },
+        {
+            path: '/coindetail/:addr',
+            name: 'CoinDetail',
+            component: () => import('@/views/Coins/CoinDetailView.vue'),
             meta: { requiresAuth: true }
         },
         {
