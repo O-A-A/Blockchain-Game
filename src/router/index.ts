@@ -7,7 +7,12 @@ const router = createRouter({
     routes: [
         {
             path: '/',
-            redirect: '/dashboard'
+            redirect: '/home'
+        },
+        {
+            path: '/home',
+            name: 'Home',
+            component: () => import('@/views/HomeView.vue')
         },
         {
             path: '/register',
@@ -47,9 +52,33 @@ const router = createRouter({
             meta: { requiresAuth: true }
         },
         {
+            path: '/coindeploy',
+            name: 'CoinDeploy',
+            component: () => import('@/views/Coins/CreateCoinView.vue'),
+            meta: { requiresAuth: true }
+        },
+        {
             path: '/coindetail/:addr',
             name: 'CoinDetail',
             component: () => import('@/views/Coins/CoinDetailView.vue'),
+            meta: { requiresAuth: true }
+        },
+        {
+            path: '/poollist',
+            name: 'PoolList',
+            component: () => import('@/views/Pools/PoolListView.vue'),
+            meta: { requiresAuth: true }
+        },
+        {
+            path: '/poolcreate',
+            name: 'CreatePool',
+            component: () => import('@/views/Pools/CreatePoolView.vue'),
+            meta: { requiresAuth: true }
+        },
+        {
+            path: '/pooldetail/:address',
+            name: 'PoolDetail',
+            component: () => import('@/views/Pools/PoolDetailView.vue'),
             meta: { requiresAuth: true }
         },
         {

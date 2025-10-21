@@ -78,7 +78,7 @@ onMounted(async () => {
     <!-- 顶部应用栏 -->
     <v-app-bar flat height="64">
       <v-container class="d-flex align-center px-4 py-0 mx-auto">
-        <div class="d-flex align-center">
+        <div class="d-flex align-center" style="cursor: pointer" @click="$router.push('/home')">
           <img src="@/assets/logo.png" alt="Logo" class="mr-3" style="width: 32px; height: 32px;">
           <v-app-bar-title class="font-weight-bold text-body-1">BrokerFi Exchange</v-app-bar-title>
         </div>
@@ -86,9 +86,21 @@ onMounted(async () => {
         <!-- 桌面版导航 -->
         <div class="d-none d-md-flex ml-8">
           <v-tabs>
+            <v-tab to="/home" class="text-body-2">
+              <v-icon size="small" class="mr-1">mdi-home</v-icon>
+              首页
+            </v-tab>
             <v-tab to="/dashboard" class="text-body-2">
               <v-icon size="small" class="mr-1">mdi-view-dashboard</v-icon>
               资产
+            </v-tab>
+            <v-tab to="/coinlist" class="text-body-2">
+              <v-icon size="small" class="mr-1">mdi-currency-usd</v-icon>
+              代币列表
+            </v-tab>
+            <v-tab to="/poollist" class="text-body-2">
+              <v-icon size="small" class="mr-1">mdi-water</v-icon>
+              流动性池
             </v-tab>
             <!-- <v-tab to="/swap" class="text-body-2">
               <v-icon size="small" class="mr-1">mdi-swap-horizontal</v-icon>
@@ -98,10 +110,6 @@ onMounted(async () => {
               <v-icon size="small" class="mr-1">mdi-water</v-icon>
               流动性
             </v-tab> -->
-            <v-tab to="/coinlist" class="text-body-2">
-              <v-icon size="small" class="mr-1">mdi-send</v-icon>
-              代币列表
-            </v-tab>
             <v-tab to="/send" class="text-body-2">
               <v-icon size="small" class="mr-1">mdi-send</v-icon>
               发送
@@ -245,9 +253,33 @@ onMounted(async () => {
         </v-list-subheader>
         
         <v-list-item
+          title="首页"
+          prepend-icon="mdi-home"
+          to="/home"
+          rounded="lg"
+          density="compact"
+        ></v-list-item>
+        
+        <v-list-item
           title="资产概览"
           prepend-icon="mdi-view-dashboard"
           to="/dashboard"
+          rounded="lg"
+          density="compact"
+        ></v-list-item>
+        
+        <v-list-item
+          title="代币列表"
+          prepend-icon="mdi-currency-usd"
+          to="/coinlist"
+          rounded="lg"
+          density="compact"
+        ></v-list-item>
+
+        <v-list-item
+          title="流动性池"
+          prepend-icon="mdi-water"
+          to="/poollist"
           rounded="lg"
           density="compact"
         ></v-list-item>
@@ -332,21 +364,21 @@ onMounted(async () => {
 
     <!-- 底部导航 - 仅移动端显示 -->
     <v-bottom-navigation grow color="primary" elevation="4" class="d-md-none">
+      <v-btn to="/home" value="home">
+        <v-icon size="small">mdi-home</v-icon>
+        <span class="text-caption">首页</span>
+      </v-btn>
+      <v-btn to="/coinlist" value="coinlist">
+        <v-icon size="small">mdi-currency-usd</v-icon>
+        <span class="text-caption">代币</span>
+      </v-btn>
+      <v-btn to="/poollist" value="poollist">
+        <v-icon size="small">mdi-water</v-icon>
+        <span class="text-caption">流动性</span>
+      </v-btn>
       <v-btn to="/dashboard" value="dashboard">
         <v-icon size="small">mdi-view-dashboard</v-icon>
         <span class="text-caption">资产</span>
-      </v-btn>
-      <v-btn to="/send" value="send">
-        <v-icon size="small">mdi-send</v-icon>
-        <span class="text-caption">发送</span>
-      </v-btn>
-      <v-btn to="/receive" value="receive">
-        <v-icon size="small">mdi-qrcode</v-icon>
-        <span class="text-caption">接收</span>
-      </v-btn>
-      <v-btn to="/swap" value="swap">
-        <v-icon size="small">mdi-swap-horizontal</v-icon>
-        <span class="text-caption">兑换</span>
       </v-btn>
       <v-btn to="/history" value="history">
         <v-icon size="small">mdi-history</v-icon>
