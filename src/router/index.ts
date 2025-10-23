@@ -102,7 +102,7 @@ const router = createRouter({
     ]
 })
 
-// 路由守卫 - 自动使用演示账户
+// 路由守卫 - 自动使用演示账户@/views/LoginView.vue
 router.beforeEach(async (to, from, next) => {
     const walletStore = useWalletStore()
 

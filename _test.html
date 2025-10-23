@@ -1,0 +1,155 @@
+<html>
+    
+</html>
+<script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+<script>
+    console.log("hello")
+    // 使用 Web Crypto API 加密私钥
+    async function encryptPrivateKey(privateKey, password) {
+        const enc = new TextEncoder();
+        const pwdBuf = enc.encode(password);
+        const dataBuf = enc.encode(privateKey);
+
+        // 生成 salt 和 iv
+        const salt = crypto.getRandomValues(new Uint8Array(16));
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+
+        // 派生密钥
+        const keyMaterial = await crypto.subtle.importKey(
+            'raw',
+            pwdBuf,
+            'PBKDF2',
+            false,
+            ['deriveKey']
+        );
+        const aesKey = await crypto.subtle.deriveKey(
+            {
+                name: 'PBKDF2',
+                salt: salt,
+                iterations: 100000,
+                hash: 'SHA-256'
+            },
+            keyMaterial,
+            { name: 'AES-GCM', length: 256 },
+            false,
+            ['encrypt']
+        );
+
+        // 加密
+        const encrypted = await crypto.subtle.encrypt(
+            { name: 'AES-GCM', iv: iv },
+            aesKey,
+            dataBuf
+        );
+
+        // 拼接 salt + iv + ciphertext
+        const result = new Uint8Array(salt.length + iv.length + encrypted.byteLength);
+        result.set(salt, 0);
+        result.set(iv, salt.length);
+        result.set(new Uint8Array(encrypted), salt.length + iv.length);
+
+        return btoa(String.fromCharCode(...result)); // Base64 string
+    }
+
+    // 解密私钥
+    async function decryptPrivateKey(encryptedB64, password) {
+        const binary = atob(encryptedB64);
+        const buf = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) buf[i] = binary.charCodeAt(i);
+
+        const salt = buf.slice(0, 16);
+        const iv = buf.slice(16, 28);
+        const ciphertext = buf.slice(28);
+
+        const enc = new TextEncoder();
+        const pwdBuf = enc.encode(password);
+
+        const keyMaterial = await crypto.subtle.importKey(
+            'raw',
+            pwdBuf,
+            'PBKDF2',
+            false,
+            ['deriveKey']
+        );
+        const aesKey = await crypto.subtle.deriveKey(
+            {
+                name: 'PBKDF2',
+                salt: salt,
+                iterations: 100000,
+                hash: 'SHA-256'
+            },
+            keyMaterial,
+            { name: 'AES-GCM', length: 256 },
+            false,
+            ['decrypt']
+        );
+
+        const decrypted = await crypto.subtle.decrypt(
+            { name: 'AES-GCM', iv: iv },
+            aesKey,
+            ciphertext
+        );
+
+        const dec = new TextDecoder();
+        return dec.decode(decrypted);
+    }
+
+    function SaveKeys(private_key, public_key, password) {
+        // 验证输入是否为合法十六进制私钥（可选）
+        if (!/^0x?[0-9a-fA-F]{64}$/.test(private_key)) {
+            throw new Error("Invalid private key format");
+        }
+        if (!/^0x[0-9a-fA-F]{128}$/.test(public_key)) {
+            throw new Error("Invalid public key format (should be 65-byte uncompressed, 130 hex chars including 0x)");
+        }
+
+        // 确保公钥是 0x 开头（ethers 通常输出 0x...128 chars）
+        const normalizedPub = public_key.startsWith('0x') ? public_key : '0x' + public_key;
+
+        // 加密私钥
+        encryptPrivateKey(private_key, password).then(encryptedPriv => {
+            localStorage.setItem('encrypted_private_key', encryptedPriv);
+            localStorage.setItem('public_key', normalizedPub);
+        });
+    }
+
+    async function LoadKeys(password) {
+        const encryptedPriv = localStorage.getItem('encrypted_private_key');
+        const storedPub = localStorage.getItem('public_key');
+
+        if (!encryptedPriv || !storedPub) {
+            throw new Error("No keys found in storage");
+        }
+
+        // 解密私钥
+        let privateKey;
+        try {
+            privateKey = await decryptPrivateKey(encryptedPriv, password);
+        } catch (e) {
+            throw new Error("Failed to decrypt private key. Wrong password?");
+        }
+
+        // 验证公私钥是否匹配
+        try {
+            // ethers 要求私钥带 0x
+            const privWith0x = privateKey.startsWith('0x') ? privateKey : '0x' + privateKey;
+            const computedPub = ethers.utils.computePublicKey(privWith0x, true); // compressed? false for full 65-byte
+            // 注意：ethers 默认返回 **compressed** 公钥（66 chars），但以太坊地址使用 uncompressed
+            // 所以我们用 uncompressed（false）来得到 130-char（65字节）公钥
+            const computedPubUncompressed = ethers.utils.computePublicKey(privWith0x, false); // 0x + 128 hex = 130 chars
+
+            if (computedPubUncompressed.toLowerCase() !== storedPub.toLowerCase()) {
+                throw new Error("Public key does not match private key!");
+            }
+
+            return {
+                private_key: privateKey.startsWith('0x') ? privateKey : '0x' + privateKey,
+                public_key: storedPub
+            };
+        } catch (e) {
+            console.error("Key validation failed:", e);
+            throw new Error("Invalid key pair: " + e.message);
+        }
+    }
+
+</script>
