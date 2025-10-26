@@ -78,88 +78,67 @@
 
       <v-row>
         <!-- 优势卡片 1 -->
-        <v-col cols="12" md="6" lg="3">
+        <v-col cols="12" md="6" lg="4">
           <v-card rounded="lg" elevation="1" class="pa-6 h-100 hover-card">
-            <v-icon size="48" color="#374151" class="mb-4">mdi-shield-check</v-icon>
-            <div class="text-h6 font-weight-bold mb-2">完全去中心化</div>
+            <v-icon size="48" color="primary" class="mb-4">mdi-web</v-icon>
+            <div class="text-h6 font-weight-bold mb-2">多链支持</div>
             <div class="text-body-2 text-medium-emphasis">
-              无中心服务器，所有交易直接在区块链上执行，用户完全控制资产
+              可以连接到所有支持 RPC 接口的区块链网络，实现真正的多链互通
             </div>
           </v-card>
         </v-col>
 
         <!-- 优势卡片 2 -->
-        <v-col cols="12" md="6" lg="3">
+        <v-col cols="12" md="6" lg="4">
           <v-card rounded="lg" elevation="1" class="pa-6 h-100 hover-card">
-            <v-icon size="48" color="#374151" class="mb-4">mdi-percent</v-icon>
-            <div class="text-h6 font-weight-bold mb-2">低手续费</div>
+            <v-icon size="48" color="success" class="mb-4">mdi-gas-station</v-icon>
+            <div class="text-h6 font-weight-bold mb-2">低 Gas 费</div>
             <div class="text-body-2 text-medium-emphasis">
-              交易手续费仅为 0.3%，相比中心化交易所节省 70% 的成本
+              智能合约函数进行了相关的优化，有效减少 Gas 费用消耗
             </div>
           </v-card>
         </v-col>
 
         <!-- 优势卡片 3 -->
-        <v-col cols="12" md="6" lg="3">
+        <v-col cols="12" md="6" lg="4">
           <v-card rounded="lg" elevation="1" class="pa-6 h-100 hover-card">
-            <v-icon size="48" color="#374151" class="mb-4">mdi-lightning-bolt</v-icon>
-            <div class="text-h6 font-weight-bold mb-2">快速交易</div>
+            <v-icon size="48" color="error" class="mb-4">mdi-shield-lock</v-icon>
+            <div class="text-h6 font-weight-bold mb-2">高安全性</div>
             <div class="text-body-2 text-medium-emphasis">
-              无需等待，交易即时确认，支持闪电贷等高级交易功能
+              使用对称加密算法和哈希匹配保存私钥，确保只有您知道具体私钥内容（注意：请妥善保管密码，一旦丢失无法找回）
             </div>
           </v-card>
         </v-col>
 
         <!-- 优势卡片 4 -->
-        <v-col cols="12" md="6" lg="3">
+        <v-col cols="12" md="6" lg="4">
           <v-card rounded="lg" elevation="1" class="pa-6 h-100 hover-card">
-            <v-icon size="48" color="#374151" class="mb-4">mdi-eye</v-icon>
-            <div class="text-h6 font-weight-bold mb-2">完全透明</div>
+            <v-icon size="48" color="#374151" class="mb-4">mdi-decagram</v-icon>
+            <div class="text-h6 font-weight-bold mb-2">高去中心化</div>
             <div class="text-body-2 text-medium-emphasis">
-              所有交易公开可查，支持 TWAP 查询，价格由市场决定
-            </div>
-          </v-card>
-        </v-col>
-      </v-row>
-
-      <!-- 更多优势 -->
-      <v-row class="mt-8">
-        <v-col cols="12" md="6" lg="3">
-          <v-card rounded="lg" elevation="1" class="pa-6 h-100 hover-card">
-            <v-icon size="48" color="primary" class="mb-4">mdi-cog</v-icon>
-            <div class="text-h6 font-weight-bold mb-2">灵活配置</div>
-            <div class="text-body-2 text-medium-emphasis">
-              可自定义滑点、创建自己的代币和流动性池
+              所有数据（包括智能合约地址等）只会从区块链网络中获取，没有任何中心化后端，所有安全性由底层链提供
             </div>
           </v-card>
         </v-col>
 
-        <v-col cols="12" md="6" lg="3">
+        <!-- 优势卡片 5 -->
+        <v-col cols="12" md="6" lg="4">
           <v-card rounded="lg" elevation="1" class="pa-6 h-100 hover-card">
-            <v-icon size="48" color="success" class="mb-4">mdi-water-percent</v-icon>
-            <div class="text-h6 font-weight-bold mb-2">高收益</div>
+            <v-icon size="48" color="#374151" class="mb-4">mdi-human-greeting</v-icon>
+            <div class="text-h6 font-weight-bold mb-2">新手友好</div>
             <div class="text-body-2 text-medium-emphasis">
-              流动性提供者可获得交易手续费分成，年化收益率达 15%+
+              一键调用合约，一键部署合约，无需任何基础知识即可体验区块链交易
             </div>
           </v-card>
         </v-col>
 
-        <v-col cols="12" md="6" lg="3">
+        <!-- 优势卡片 6 -->
+        <v-col cols="12" md="6" lg="4">
           <v-card rounded="lg" elevation="1" class="pa-6 h-100 hover-card">
-            <v-icon size="48" color="#374151" class="mb-4">mdi-lock</v-icon>
-            <div class="text-h6 font-weight-bold mb-2">安全可靠</div>
+            <v-icon size="48" color="#374151" class="mb-4">mdi-lightning-bolt</v-icon>
+            <div class="text-h6 font-weight-bold mb-2">高级功能</div>
             <div class="text-body-2 text-medium-emphasis">
-              智能合约经过审计，支持多重签名和硬件钱包集成
-            </div>
-          </v-card>
-        </v-col>
-
-        <v-col cols="12" md="6" lg="3">
-          <v-card rounded="lg" elevation="1" class="pa-6 h-100 hover-card">
-            <v-icon size="48" color="#374151" class="mb-4">mdi-earth</v-icon>
-            <div class="text-h6 font-weight-bold mb-2">跨链支持</div>
-            <div class="text-body-2 text-medium-emphasis">
-              支持多条区块链网络，轻松实现跨链交易和桥接
+              支持高级功能，包括 TWAP（时间加权平均价格）和 Flash Swap（闪电交换）
             </div>
           </v-card>
         </v-col>
