@@ -13,7 +13,7 @@
     "chart.js": "^4.5.0",
     "crypto-js": "^4.2.0",
     "date-fns": "^4.1.0",
-    "ethers": "^6.10.0",
+    "ethers": "6",
     "pinia": "^2.1.7",
     "qrcode.vue": "^3.4.1",
     "vue": "^3.4.15",
