@@ -44,25 +44,32 @@ class PoolService {
       const ammContracts = contractsStore.contracts.filter(c => c.type === 2)
       
       if (ammContracts.length === 0) {
-        console.warn('未找到 AMM 合约，请先扫描区块链')
+        console.log('未找到 AMM 合约')
         return []
       }
 
+      console.log(`找到 ${ammContracts.length} 个 AMM 合约`)
+
       // 并行获取所有池子的信息
       const poolsPromises = ammContracts.map(contract => 
-        this.getPoolInfo(contract.address).catch(error => {
-          console.error(`获取池子 ${contract.address} 信息失败:`, error)
-          return null
-        })
+        this.getPoolInfo(contract.address).catch(() => null)
       )
 
       const pools = await Promise.all(poolsPromises)
       
       // 过滤掉失败的请求
-      return pools.filter(pool => pool !== null) as PoolInfo[]
+      const validPools = pools.filter(pool => pool !== null) as PoolInfo[]
+      
+      console.log(`找到 ${ammContracts.length} 个 AMM 合约，成功加载 ${validPools.length} 个池子`)
+      
+      if (validPools.length === 0 && ammContracts.length > 0) {
+        console.warn(`⚠️ ${ammContracts.length} 个 AMM 合约无法读取详细信息（可能未初始化或版本不兼容）`)
+      }
+      
+      return validPools
     } catch (error) {
       console.error('获取池子列表失败:', error)
-      throw error
+      return [] // 返回空数组而不是抛出错误
     }
   }
 
@@ -81,17 +88,8 @@ class PoolService {
         userAddress = wallet.address
       }
 
-      // 并行获取池子基本信息
-      const [
-        poolName,
-        tokenAAddress,
-        tokenBAddress,
-        poolInfo,
-        feeRate,
-        feeDenominator,
-        userLpBalance,
-        totalLpSupply
-      ] = await Promise.all([
+      // 并行获取池子基本信息（使用错误处理）
+      const results = await Promise.allSettled([
         contractInteractionService.callViewFunction({
           address: poolAddress,
           abi,
@@ -127,13 +125,55 @@ class PoolService {
           abi,
           functionName: 'userLpToken',
           args: [userAddress]
-        }),
+        }).catch(() => BigInt(0)), // 如果失败返回 0
         contractInteractionService.callViewFunction({
           address: poolAddress,
           abi,
           functionName: 'lpTokenTotalSupply'
-        })
+        }).catch(() => BigInt(0)) // 如果失败返回 0
       ])
+
+      const poolName = results[0].status === 'fulfilled' ? results[0].value : BigInt(0)
+      const tokenAAddress = (results[1].status === 'fulfilled' ? results[1].value : ethers.ZeroAddress) as string
+      const tokenBAddress = (results[2].status === 'fulfilled' ? results[2].value : ethers.ZeroAddress) as string
+      const poolInfo = (results[3].status === 'fulfilled' ? results[3].value : [BigInt(0), BigInt(0), BigInt(0), BigInt(0)]) as any[]
+      const feeRate = results[4].status === 'fulfilled' ? results[4].value : BigInt(3)
+      const feeDenominator = results[5].status === 'fulfilled' ? results[5].value : BigInt(1000)
+      const userLpBalance = results[6].status === 'fulfilled' ? (results[6].value as bigint) : BigInt(0)
+      const totalLpSupply = results[7].status === 'fulfilled' ? (results[7].value as bigint) : BigInt(0)
+
+      // 检查是否读取到有效数据
+      const isValid = tokenAAddress !== ethers.ZeroAddress && tokenBAddress !== ethers.ZeroAddress
+      
+      // 如果无法读取完整信息，返回基本的占位池子
+      if (!isValid) {
+        return {
+          address: poolAddress,
+          name: this.uint256ToString(poolName) || 'NaN',
+          token0: {
+            address: tokenAAddress,
+            symbol: 'NaN',
+            name: 'NaN',
+            decimals: 18
+          },
+          token1: {
+            address: tokenBAddress,
+            symbol: 'NaN',
+            name: 'NaN',
+            decimals: 18
+          },
+          reserve0: 'NaN',
+          reserve1: 'NaN',
+          reserve0Raw: '0',
+          reserve1Raw: '0',
+          fee: 'NaN',
+          price: 'NaN',
+          userLpBalance: 'NaN',
+          userLpBalanceRaw: '0',
+          totalLpSupply: 'NaN',
+          totalLpSupplyRaw: '0'
+        }
+      }
 
       // 获取代币信息
       const [token0Info, token1Info] = await Promise.all([
@@ -176,7 +216,7 @@ class PoolService {
         totalLpSupplyRaw: totalLpSupply.toString()
       }
     } catch (error) {
-      console.error(`获取池子 ${poolAddress} 信息失败:`, error)
+      // 静默处理，避免重复日志
       throw error
     }
   }
@@ -215,7 +255,6 @@ class PoolService {
         decimals: info.decimals
       }
     } catch (error) {
-      console.error(`获取代币 ${tokenAddress} 信息失败:`, error)
       // 返回默认值
       return {
         address: tokenAddress,
@@ -247,7 +286,6 @@ class PoolService {
 
       return result.toString()
     } catch (error) {
-      console.error('计算交换输出失败:', error)
       throw error
     }
   }
@@ -270,7 +308,6 @@ class PoolService {
         args: [inputAmount]
       })
     } catch (error) {
-      console.error('执行交换失败:', error)
       throw error
     }
   }
@@ -286,7 +323,6 @@ class PoolService {
     try {
       return await contractInteractionService.addLiquidity(poolAddress, amountA, amountB)
     } catch (error) {
-      console.error('添加流动性失败:', error)
       throw error
     }
   }
@@ -301,7 +337,6 @@ class PoolService {
     try {
       return await contractInteractionService.removeLiquidity(poolAddress, lpTokenAmount)
     } catch (error) {
-      console.error('移除流动性失败:', error)
       throw error
     }
   }
@@ -321,7 +356,6 @@ class PoolService {
 
       return result.toString()
     } catch (error) {
-      console.error('获取 TWAP 价格失败:', error)
       throw error
     }
   }
@@ -346,7 +380,6 @@ class PoolService {
         args: [amount, data, caller]
       })
     } catch (error) {
-      console.error('执行闪电贷失败:', error)
       throw error
     }
   }
@@ -362,7 +395,6 @@ class PoolService {
     try {
       return await contractInteractionService.approveERC20(tokenAddress, spenderAddress, amount)
     } catch (error) {
-      console.error('授权代币失败:', error)
       throw error
     }
   }
@@ -374,7 +406,6 @@ class PoolService {
     try {
       return await contractInteractionService.getERC20Balance(tokenAddress, accountAddress)
     } catch (error) {
-      console.error('获取代币余额失败:', error)
       throw error
     }
   }
@@ -391,7 +422,6 @@ class PoolService {
       
       return (reserve0Num / reserve1Num).toString()
     } catch (error) {
-      console.error('计算价格失败:', error)
       return '0'
     }
   }
@@ -419,7 +449,6 @@ class PoolService {
       
       return parts.join('.')
     } catch (error) {
-      console.error('格式化数字失败:', error)
       return '0'
     }
   }
@@ -452,7 +481,6 @@ class PoolService {
       const trimmedBytes = bytes.slice(0, endIndex)
       return ethers.toUtf8String(trimmedBytes)
     } catch (error) {
-      console.error('uint256ToString 转换失败:', error, value)
       return String(value)
     }
   }

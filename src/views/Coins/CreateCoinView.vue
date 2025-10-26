@@ -316,11 +316,8 @@ const deployToken = async () => {
 
     if (tokenType.value === 'erc20') {
       // 部署 ERC20 代币
-      console.log('正在部署 ERC20 代币...', {
-        name: formData.value.name,
-        totalSupply: formData.value.initialSupply,
-        imgUrl: formData.value.imgUrl
-      })
+      // 正在部署 ERC20 代币
+      deployProgress.value = '正在部署 ERC20 代币...'
 
       result = await contractDeployService.deployERC20({
         name: formData.value.name,
@@ -329,10 +326,8 @@ const deployToken = async () => {
       })
     } else {
       // 部署 WBKC 代币
-      console.log('正在部署 WBKC 代币...', {
-        name: formData.value.name,
-        imgUrl: formData.value.imgUrl
-      })
+      // 正在部署 WBKC 代币
+      deployProgress.value = '正在部署 WBKC 代币...'
 
       result = await contractDeployService.deployWBKC({
         name: formData.value.name,
@@ -349,8 +344,6 @@ const deployToken = async () => {
       throw new Error('部署结果不完整')
     }
 
-    console.log('代币部署成功:', result.contractAddress, result.contractInfo)
-
     // 不需要再次添加到store，因为 deployService 已经添加了
     // contractsStore.addContract(result.contractInfo)
 
@@ -366,7 +359,6 @@ const deployToken = async () => {
 
     showSuccessDialog.value = true
   } catch (error) {
-    console.error('部署代币失败:', error)
     alert(`部署失败: ${error.message || '未知错误'}`)
   } finally {
     isLoading.value = false
@@ -379,7 +371,6 @@ const copyAddress = async () => {
     await navigator.clipboard.writeText(deployedToken.value.address)
     showCopySuccess.value = true
   } catch (err) {
-    console.error('复制失败:', err)
   }
 }
 

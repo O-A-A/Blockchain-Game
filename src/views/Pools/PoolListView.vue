@@ -166,9 +166,7 @@ const loadPools = async () => {
   
   try {
     pools.value = await poolService.getAllPools()
-    console.log('加载了', pools.value.length, '个池子')
   } catch (err: any) {
-    console.error('加载池子失败:', err)
     error.value = err.message || '加载失败'
   } finally {
     loading.value = false
@@ -209,7 +207,6 @@ const copyToClipboard = async (text: string) => {
     await navigator.clipboard.writeText(text)
     showCopySuccess.value = true
   } catch (err) {
-    console.error('复制失败:', err)
   }
 }
 

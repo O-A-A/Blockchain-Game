@@ -580,7 +580,6 @@ const confirmSend = async () => {
     showConfirmDialog.value = false
     showResultDialog.value = true
   } catch (error) {
-    console.error('发送错误:', error)
     sendSuccess.value = false
     sendErrorMessage.value = error?.message || '发送过程中发生错误'
     

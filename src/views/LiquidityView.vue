@@ -494,7 +494,6 @@
       
       return amountAValid && amountBValid;
     } catch (error) {
-      console.error('验证输入时出错:', error);
       return false;
     }
   });
@@ -521,7 +520,6 @@
       
       isLoading.value = false;
     } catch (error) {
-      console.error('初始化流动性页面失败:', error);
       isLoading.value = false;
       errorMessage.value = '加载数据失败';
     }
@@ -551,7 +549,6 @@
     try {
       const ammPool = contractsStore.ammPools[0];
       if (!ammPool) {
-        console.warn('未找到 AMM 池');
         return;
       }
       
@@ -571,7 +568,6 @@
       totalLiquidityValue.value = (wbkcValue + e20cValue).toFixed(2);
       
     } catch (error) {
-      console.error('获取池子信息失败:', error);
       throw error;
     }
   };
@@ -581,7 +577,6 @@
     try {
       const ammPool = contractsStore.ammPools[0];
       if (!ammPool) {
-        console.warn('未找到 AMM 池');
         return;
       }
       
@@ -606,7 +601,6 @@
       }
       
     } catch (error) {
-      console.error('获取LP余额失败:', error);
       throw error;
     }
   };
@@ -638,7 +632,6 @@
       
       const ammPool = contractsStore.ammPools[0];
       if (!ammPool) {
-        console.warn('未找到 AMM 池');
         return;
       }
       
@@ -679,7 +672,6 @@
         }
       }
     } catch (error) {
-      console.error('计算比例失败:', error);
     }
   };
   
@@ -718,7 +710,6 @@
         poolShare.value = '100.00';
       }
     } catch (error) {
-      console.error('估算LP代币失败:', error);
     }
   };
   
@@ -747,7 +738,6 @@
         expectedAmountB.value = '0';
       }
     } catch (error) {
-      console.error('计算移除流动性失败:', error);
     }
   };
   
@@ -846,7 +836,6 @@
       operationSuccess.value = true;
       showResultDialog.value = true;
     } catch (error) {
-      console.error('添加流动性失败:', error);
       errorMessage.value = error.message || '添加流动性失败，请稍后再试';
       operationSuccess.value = false;
       showResultDialog.value = true;
@@ -892,7 +881,6 @@
       operationSuccess.value = true;
       showResultDialog.value = true;
     } catch (error) {
-      console.error('移除流动性失败:', error);
       errorMessage.value = error.message || '移除流动性失败，请稍后再试';
       operationSuccess.value = false;
       showResultDialog.value = true;

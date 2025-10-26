@@ -361,7 +361,8 @@ const deployPool = async () => {
   isLoading.value = true
 
   try {
-    console.log('开始部署 AMM 流动性池...', {
+    // 开始部署 AMM 流动性池
+    /*console.log('开始部署 AMM 流动性池...', {
       tokenA: formData.value.tokenA,
       tokenB: formData.value.tokenB,
       poolName: formData.value.poolName,
@@ -379,7 +380,6 @@ const deployPool = async () => {
       throw new Error(result.error || '部署失败')
     }
 
-    console.log('流动性池部署成功:', result.contractAddress)
 
     deployedPool.value = {
       address: result.contractAddress || '',
@@ -398,7 +398,6 @@ const deployPool = async () => {
       imgUrl: ''
     }
   } catch (error: any) {
-    console.error('部署流动性池失败:', error)
     alert(`部署失败: ${error.message || '未知错误'}`)
   } finally {
     isLoading.value = false
@@ -411,7 +410,6 @@ const copyAddress = async (address: string) => {
     await navigator.clipboard.writeText(address)
     showCopySuccess.value = true
   } catch (err) {
-    console.error('复制失败:', err)
   }
 }
 
@@ -428,8 +426,6 @@ const goToPoolList = () => {
 
 // 页面加载时检查代币数量
 onMounted(() => {
-  console.log('可用代币数量:', tokenOptions.value.length)
-
   if (tokenOptions.value.length === 0) {
     alert('暂无可用代币。请先部署代币或扫描区块链查找已部署的代币。')
   } else if (tokenOptions.value.length < 2) {

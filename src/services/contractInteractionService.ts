@@ -61,18 +61,10 @@ class ContractInteractionService {
       const contract = this.getContract(options.address, options.abi)
       const args = options.args || []
 
-      console.log(`[调用只读函数] ${options.functionName}`, {
-        address: options.address,
-        args
-      })
-
       const result = await contract[options.functionName](...args)
-
-      console.log(`[只读函数结果]`, result)
 
       return result
     } catch (error: any) {
-      console.error(`调用只读函数失败:`, error)
       throw error
     }
   }
@@ -87,28 +79,17 @@ class ContractInteractionService {
       const contract = this.getContract(options.address, options.abi)
       const args = options.args || []
 
-      console.log(`[发送交易] ${options.functionName}`, {
-        address: options.address,
-        args,
-        value: options.value
-      })
-
       // 构建 overrides
       const overrides: any = {}
       if (options.value) {
         overrides.value = ethers.parseEther(options.value)
-        console.log(`[交易附带ETH]`, options.value, 'ETH')
       }
 
       // 发送交易
       const tx = await contract[options.functionName](...args, overrides)
 
-      console.log(`[交易已发送] 哈希:`, tx.hash)
-
       // 等待确认
       const receipt = await tx.wait()
-
-      console.log(`[交易已确认] 区块:`, receipt.blockNumber, 'Gas:', receipt.gasUsed.toString())
 
       return {
         success: true,
@@ -130,8 +111,8 @@ class ContractInteractionService {
   async getERC20Info(address: string) {
     const abi = this.getAbi('erc20')
 
-    // 并行获取所有信息
-    const [coinName, totalSupply, imgUrl, owner, contractType] = await Promise.all([
+    // 并行获取所有信息（使用 allSettled 容错）
+    const results = await Promise.allSettled([
       this.callViewFunction({ address, abi, functionName: 'coin_name' }),
       this.callViewFunction({ address, abi, functionName: 'totalSupply' }),
       this.callViewFunction({ address, abi, functionName: 'img_coin_url' }),
@@ -139,7 +120,13 @@ class ContractInteractionService {
       this.callViewFunction({ address, abi, functionName: 'contract_type' })
     ])
 
-    const name = this.uint256ToString(coinName)
+    const coinName = results[0].status === 'fulfilled' ? results[0].value : BigInt(0)
+    const totalSupply = results[1].status === 'fulfilled' ? results[1].value : BigInt(0)
+    const imgUrl = results[2].status === 'fulfilled' ? results[2].value : BigInt(0)
+    const owner = results[3].status === 'fulfilled' ? results[3].value : ethers.ZeroAddress
+    const contractType = results[4].status === 'fulfilled' ? results[4].value : BigInt(0)
+
+    const name = this.uint256ToString(coinName) || 'NaN'
     const symbol = this.deriveSymbolFromName(name)
 
     return {
@@ -148,7 +135,7 @@ class ContractInteractionService {
       symbol,
       decimals: 18, // 默认18位精度
       totalSupply: totalSupply.toString(),
-      url: this.uint256ToString(imgUrl),
+      url: this.uint256ToString(imgUrl) || '',
       owner,
       contractType: Number(contractType)
     }
@@ -191,7 +178,8 @@ class ContractInteractionService {
   async getWBKCInfo(address: string) {
     const abi = this.getAbi('wbkc')
 
-    const [coinName, totalSupply, imgUrl, owner, contractType] = await Promise.all([
+    // 并行获取所有信息（使用 allSettled 容错）
+    const results = await Promise.allSettled([
       this.callViewFunction({ address, abi, functionName: 'coin_name' }),
       this.callViewFunction({ address, abi, functionName: 'totalSupply' }),
       this.callViewFunction({ address, abi, functionName: 'img_coin_url' }),
@@ -199,7 +187,13 @@ class ContractInteractionService {
       this.callViewFunction({ address, abi, functionName: 'contract_type' })
     ])
 
-    const name = this.uint256ToString(coinName)
+    const coinName = results[0].status === 'fulfilled' ? results[0].value : BigInt(0)
+    const totalSupply = results[1].status === 'fulfilled' ? results[1].value : BigInt(0)
+    const imgUrl = results[2].status === 'fulfilled' ? results[2].value : BigInt(0)
+    const owner = results[3].status === 'fulfilled' ? results[3].value : ethers.ZeroAddress
+    const contractType = results[4].status === 'fulfilled' ? results[4].value : BigInt(1)
+
+    const name = this.uint256ToString(coinName) || 'NaN'
 
     return {
       address,
@@ -207,7 +201,7 @@ class ContractInteractionService {
       symbol: 'WBKC', // WBKC 固定符号
       decimals: 18, // 默认18位精度
       totalSupply: totalSupply.toString(),
-      url: this.uint256ToString(imgUrl),
+      url: this.uint256ToString(imgUrl) || '',
       owner,
       contractType: Number(contractType)
     }
@@ -375,7 +369,6 @@ class ContractInteractionService {
       const trimmedBytes = bytes.slice(0, endIndex)
       return ethers.toUtf8String(trimmedBytes)
     } catch (error) {
-      console.error('uint256ToString 转换失败:', error, value)
       return String(value)
     }
   }

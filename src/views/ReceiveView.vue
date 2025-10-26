@@ -404,7 +404,6 @@ const copyAddress = () => {
         copySuccessMessage.value = '地址已复制到剪贴板'
       })
       .catch(err => {
-        console.error('复制失败：', err)
       })
   }
 }
@@ -428,7 +427,6 @@ const copyFullInfo = () => {
         copySuccessMessage.value = '接收信息已复制到剪贴板'
       })
       .catch(err => {
-        console.error('复制失败：', err)
       })
   }
 }

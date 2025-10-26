@@ -108,11 +108,9 @@ router.beforeEach(async (to, from, next) => {
 
     // 尝试从 sessionStorage 恢复区块链连接
     if (!connectionService.isConnected()) {
-        console.log('[路由守卫] 检测到未连接，尝试恢复会话...')
         const restored = await connectionService.restoreFromSession()
 
         if (restored) {
-            console.log('[路由守卫] ✓ 会话恢复成功')
             // 恢复钱包状态
             const address = connectionService.getAddress()
             if (address) {
@@ -120,8 +118,6 @@ router.beforeEach(async (to, from, next) => {
                 walletStore.setLoggedIn(true)
             }
         } else {
-            console.log('[路由守卫] ✗ 会话恢复失败，检查 localStorage...')
-
             // 尝试从localStorage恢复登录状态（仅显示状态，不恢复连接）
             if (!walletStore.isLoggedIn) {
                 const savedAddress = localStorage.getItem('walletAddress')
@@ -131,22 +127,17 @@ router.beforeEach(async (to, from, next) => {
                     // 有保存的登录信息，设置为已登录状态
                     walletStore.setAddress(savedAddress)
                     walletStore.setLoggedIn(true)
-                    console.log('[路由守卫] 从 localStorage 恢复了登录状态')
                 }
             }
         }
-    } else {
-        console.log('[路由守卫] 已连接到区块链节点')
     }
 
     // 如果访问需要登录的页面但未登录，重定向到登录页
     if (to.meta.requiresAuth && !walletStore.isLoggedIn) {
-        console.log('[路由守卫] 需要登录，重定向到 /login')
         next('/login')
     }
     // 如果已登录但访问登录页，重定向到仪表板
     else if (to.path === '/login' && walletStore.isLoggedIn) {
-        console.log('[路由守卫] 已登录，重定向到 /dashboard')
         next('/dashboard')
     } else {
         next()

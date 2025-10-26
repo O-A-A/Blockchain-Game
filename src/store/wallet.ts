@@ -83,7 +83,6 @@ export const useWalletStore = defineStore('wallet', () => {
     // 刷新余额 - 使用blockchain.js
     const refreshBalances = async () => {
         if (!isLoggedIn.value || !address.value) {
-            console.warn('Wallet not unlocked, cannot refresh balances.');
             // 未登录时清空余额显示
             wbkcBalance.value = '0';
             e20cBalance.value = '0';
@@ -119,7 +118,6 @@ export const useWalletStore = defineStore('wallet', () => {
             e20cBalance.value = e20cResult;
             
         } catch (err: any) {
-            console.error('获取余额失败：', err);
             error.value = '获取余额失败，请稍后再试';
         } finally {
             isLoading.value = false;
@@ -137,7 +135,6 @@ export const useWalletStore = defineStore('wallet', () => {
             const ammPool = contractsStore.ammPools[0];
             
             if (!ammPool) {
-                console.warn('未找到 AMM 池');
                 return '0';
             }
             
@@ -165,7 +162,6 @@ export const useWalletStore = defineStore('wallet', () => {
             // 不进行fromWei转换，直接返回原始输出量
             return outputAmount.toString();
         } catch (err) {
-            console.error('获取预计兑换金额失败：', err);
             return '0';
         }
     }
@@ -179,7 +175,6 @@ export const useWalletStore = defineStore('wallet', () => {
             const ammPool = contractsStore.ammPools[0];
             
             if (!ammPool) {
-                console.warn('未找到 AMM 池');
                 return {
                     wbkcToE20c: '0.5',
                     e20cToWbkc: '2',
@@ -206,7 +201,6 @@ export const useWalletStore = defineStore('wallet', () => {
                 rateBToA: rateBToA     // 保留原字段，表示B→A (wBKC→E20C)
             };
         } catch (err) {
-            console.error('获取汇率失败：', err);
             return {
                 wbkcToE20c: '0.5',
                 e20cToWbkc: '2',
@@ -241,7 +235,6 @@ export const useWalletStore = defineStore('wallet', () => {
             
             return '1.00' // 默认汇率
         } catch (error) {
-            console.error('获取汇率失败:', error)
             // 返回默认汇率
             if (fromCurrency === 'wBKC' && toCurrency === 'E20C') {
                 return '0.50'
@@ -367,7 +360,6 @@ export const useWalletStore = defineStore('wallet', () => {
                 outputAmount: finalOutputAmount
             };
         } catch (e: any) {
-            console.error('兑换失败:', e);
             error.value = e.message || '兑换失败，请稍后再试';
             return { success: false, error: error.value };
         } finally {
@@ -410,7 +402,7 @@ export const useWalletStore = defineStore('wallet', () => {
                 transactions.value = JSON.parse(savedTxs);
             }
         } catch (error) {
-            console.error('加载交易记录失败:', error);
+            // 加载失败，忽略
         }
     }
     
@@ -421,7 +413,7 @@ export const useWalletStore = defineStore('wallet', () => {
                 localStorage.setItem(`transactions_${address.value}`, JSON.stringify(transactions.value));
             }
         } catch (error) {
-            console.error('保存交易记录失败:', error);
+            // 保存失败，忽略
         }
     }
 

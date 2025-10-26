@@ -77,14 +77,12 @@ export const useContractsStore = defineStore('contracts', () => {
   function addContract(contract: ContractInfo) {
     // 验证传入的合约对象
     if (!contract || !contract.address) {
-      console.error('无效的合约对象:', contract)
       return
     }
 
     // 检查是否已存在（过滤掉 null 元素）
     const exists = contracts.value.some(c => c && c.address && c.address.toLowerCase() === contract.address.toLowerCase())
     if (exists) {
-      console.warn(`合约 ${contract.address} 已存在`)
       return
     }
 
@@ -99,7 +97,6 @@ export const useContractsStore = defineStore('contracts', () => {
     newContracts.forEach(contract => {
       // 跳过无效的合约对象
       if (!contract || !contract.address) {
-        console.warn('跳过无效的合约对象:', contract)
         return
       }
 
@@ -121,7 +118,7 @@ export const useContractsStore = defineStore('contracts', () => {
       c => c && c.address && c.address.toLowerCase() === address.toLowerCase()
     )
     if (index !== -1) {
-      contracts.value[index] = { ...contracts.value[index], ...updates }
+      contracts.value[index] = { ...contracts.value[index], ...updates } as ContractInfo
       saveToStorage()
     }
   }
@@ -244,7 +241,6 @@ export const useContractsStore = defineStore('contracts', () => {
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
     } catch (err) {
-      console.error('保存合约数据失败:', err)
       error.value = '保存失败'
     }
   }
@@ -261,8 +257,6 @@ export const useContractsStore = defineStore('contracts', () => {
         const validContracts = (data.contracts || []).filter((c: any) => c && c.address)
         contracts.value = validContracts
         lastScanBlock.value = data.lastScanBlock || 0
-
-        console.log(`[Contracts Store] 从存储加载了 ${validContracts.length} 个有效合约`)
       }
 
       // 加载最后扫描区块
@@ -271,7 +265,6 @@ export const useContractsStore = defineStore('contracts', () => {
         lastScanBlock.value = parseInt(lastBlock)
       }
     } catch (err) {
-      console.error('加载合约数据失败:', err)
       error.value = '加载失败'
     }
   }
@@ -301,7 +294,6 @@ export const useContractsStore = defineStore('contracts', () => {
       }
       return false
     } catch (err) {
-      console.error('导入合约数据失败:', err)
       error.value = '导入失败'
       return false
     }

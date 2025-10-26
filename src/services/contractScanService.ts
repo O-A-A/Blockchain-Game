@@ -123,8 +123,6 @@ class ContractScanService {
     const start = startBlock || contractsStore.lastScanBlock || 0
     const end = endBlock || latestBlock
 
-    console.log(`开始扫描区块 ${start} 到 ${end}`)
-
     // 更新扫描状态
     contractsStore.startScan(end - start + 1)
 
@@ -167,22 +165,19 @@ class ContractScanService {
                 if (contractInfo) {
                   foundContracts.push(contractInfo)
                   contractsStore.addContract(contractInfo)
-                  console.log(`发现合约: ${contractAddress}, 类型: ${contractInfo.type}`)
                 }
               }
             } catch (txError) {
               // 单个交易错误不应中断整个扫描
-              console.warn(`处理交易 ${txHash} 时出错:`, txError)
             }
           }
         } catch (blockError) {
-          console.warn(`处理区块 ${blockNum} 时出错:`, blockError)
+          // 区块错误不应中断整个扫描
         }
       }
 
       // 完成扫描
       contractsStore.completeScan(end)
-      console.log(`扫描完成，共发现 ${foundContracts.length} 个合约`)
 
       return foundContracts
     } catch (error) {
@@ -211,8 +206,6 @@ class ContractScanService {
       const typeValue = await typeContract.contract_type()
       const type = Number(typeValue) as ContractType
 
-      console.log(`合约 ${address} 类型: ${type}`)
-
       // 根据类型读取详细信息
       switch (type) {
         case 0: // ERC20
@@ -225,12 +218,10 @@ class ContractScanService {
           return await this.readAMMInfo(address, blockNum, timestamp)
 
         default:
-          console.warn(`未知的合约类型: ${type}`)
           return null
       }
     } catch (error) {
       // 如果无法调用contract_type()，说明不是我们的合约
-      console.debug(`合约 ${address} 不是BrokerFi合约`)
       return null
     }
   }
@@ -313,25 +304,44 @@ class ContractScanService {
     blockNum: number,
     timestamp: number
   ): Promise<AMMContractInfo> {
-    // 使用 contractInteractionService 来获取信息
-    const info = await (await import('./contractInteractionService')).default.getAMMInfo(address)
-    
-    // 获取 owner
     const provider = connectionService.getProvider()
-    const abi = (await import('./contractInteractionService')).default.getAbi('amm')
-    const contract = new ethers.Contract(address, abi, provider)
-    const owner = await contract.poolOwner()
+    const contract = new ethers.Contract(address, AMM_INFO_ABI, provider)
 
-    return {
-      address,
-      type: 2,
-      deployedBlock: blockNum,
-      deployedTime: timestamp,
-      owner,
-      poolName: info.poolName,
-      imgUrl: info.url,
-      tokenA: info.tokenA,
-      tokenB: info.tokenB
+    // 尝试读取信息，即使部分失败也保留合约记录
+    try {
+      const [poolName, tokenAAddress, tokenBAddress, owner, imgUrl] = await Promise.all([
+        contract.POOL_NAME().catch(() => BigInt(0)),
+        contract.tokenAAddress().catch(() => ethers.ZeroAddress),
+        contract.tokenBAddress().catch(() => ethers.ZeroAddress),
+        contract.poolOwner().catch(() => ethers.ZeroAddress),
+        contract.pool_img_url().catch(() => BigInt(0))
+      ])
+
+      return {
+        address,
+        type: 2,
+        deployedBlock: blockNum,
+        deployedTime: timestamp,
+        owner,
+        poolName: this.uint256ToString(poolName),
+        imgUrl: this.uint256ToString(imgUrl),
+        tokenA: tokenAAddress,
+        tokenB: tokenBAddress
+      }
+    } catch (error) {
+      // 即使完全失败，也返回基本的 AMM 合约记录
+      console.warn(`AMM 合约 ${address} 读取失败，保留基本信息`)
+      return {
+        address,
+        type: 2,
+        deployedBlock: blockNum,
+        deployedTime: timestamp,
+        owner: ethers.ZeroAddress,
+        poolName: 'Unknown Pool',
+        imgUrl: '',
+        tokenA: ethers.ZeroAddress,
+        tokenB: ethers.ZeroAddress
+      }
     }
   }
 
@@ -381,7 +391,6 @@ class ContractScanService {
       const trimmedBytes = bytes.slice(0, endIndex)
       return ethers.toUtf8String(trimmedBytes)
     } catch (error) {
-      console.error('uint256ToString 转换失败:', error, value)
       return String(value)
     }
   }
@@ -429,7 +438,6 @@ class ContractScanService {
       // 识别并读取合约信息
       return await this.identifyAndReadContract(address, 0, Date.now())
     } catch (error) {
-      console.error('识别合约失败:', error)
       throw error
     }
   }

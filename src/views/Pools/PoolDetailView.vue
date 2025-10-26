@@ -327,9 +327,7 @@ const loadPoolInfo = async () => {
     // 获取用户代币余额
     await loadTokenBalances()
     
-    console.log('池子信息加载成功:', pool.value)
   } catch (err: any) {
-    console.error('加载池子信息失败:', err)
     error.value = err.message || '加载失败'
   } finally {
     loading.value = false
@@ -350,7 +348,6 @@ const loadTokenBalances = async () => {
     token0Balance.value = ethers.formatUnits(balance0, pool.value.token0.decimals)
     token1Balance.value = ethers.formatUnits(balance1, pool.value.token1.decimals)
   } catch (err: any) {
-    console.error('加载代币余额失败:', err)
   }
 }
 

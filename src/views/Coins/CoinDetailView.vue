@@ -265,6 +265,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useContractsStore } from '@/store/contracts'
 import contractInteractionService from '@/services/contractInteractionService'
 import connectionService from '@/services/connectionService'
 import ContractFunctionCaller from '@/components/ContractFunctionCaller.vue'
@@ -272,6 +273,7 @@ import { ethers } from 'ethers'
 
 const router = useRouter()
 const route = useRoute()
+const contractsStore = useContractsStore()
 
 // 从路由参数获取代币地址
 const tokenAddress = route.params.addr as string
@@ -312,28 +314,26 @@ const loadTokenInfo = async () => {
     const wallet = connectionService.getWallet()
     userAddress.value = wallet.address
 
-    // 判断是 ERC20 还是 WBKC（通过 contract_type）
-    const contractType = await contractInteractionService.callViewFunction({
-      address: tokenAddress,
-      abi: contractInteractionService.getAbi('erc20'),
-          functionName: 'contract_type'
-        })
+    // 从 store 获取合约类型（所有合约都已扫描并存储）
+    const storedContract = contractsStore.getContractByAddress(tokenAddress)
+    if (!storedContract) {
+      throw new Error('合约未找到，请先扫描区块链')
+    }
+    
+    const contractType = storedContract.type
 
     // 根据类型获取信息
-    if (Number(contractType) === 1) {
+    if (contractType === 1) {
       // WBKC
       tokenInfo.value = await contractInteractionService.getWBKCInfo(tokenAddress)
     } else {
-      // ERC20
+      // ERC20 (默认)
       tokenInfo.value = await contractInteractionService.getERC20Info(tokenAddress)
     }
 
     // 获取用户余额
     await loadUserBalance()
-
-    console.log('代币信息加载成功:', tokenInfo.value)
   } catch (err: any) {
-    console.error('加载代币信息失败:', err)
     error.value = err.message || '加载失败'
   } finally {
     loading.value = false
@@ -349,7 +349,6 @@ const loadUserBalance = async () => {
     const balance = await contractInteractionService.getERC20Balance(tokenAddress, userAddress.value)
     userBalance.value = formatBalance(balance)
   } catch (err: any) {
-    console.error('加载用户余额失败:', err)
   }
 }
 
@@ -405,7 +404,6 @@ const copyToClipboard = async (text: string) => {
     await navigator.clipboard.writeText(text)
     showCopySuccess.value = true
   } catch (err) {
-    console.error('复制失败:', err)
   }
 }
 

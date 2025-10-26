@@ -42,8 +42,6 @@ class ContractDeployService {
         throw new Error('无法获取钱包实例，请重新登录')
       }
 
-      console.log('[部署] 钱包地址:', wallet.address)
-
       const contractsStore = useContractsStore()
 
       // 加载bytecode
@@ -115,7 +113,6 @@ class ContractDeployService {
         transactionHash: deployTx.hash
       }
     } catch (error: any) {
-      console.error('部署ERC20合约失败:', error)
       return {
         success: false,
         transactionHash: '',
@@ -203,7 +200,6 @@ class ContractDeployService {
         transactionHash: deployTx.hash
       }
     } catch (error: any) {
-      console.error('部署WBKC合约失败:', error)
       return {
         success: false,
         transactionHash: '',
@@ -304,7 +300,6 @@ class ContractDeployService {
         transactionHash: deployTx.hash
       }
     } catch (error: any) {
-      console.error('部署AMM合约失败:', error)
       return {
         success: false,
         transactionHash: '',
@@ -329,7 +324,6 @@ class ContractDeployService {
       // 确保bytecode以0x开头
       return bytecode.startsWith('0x') ? bytecode : '0x' + bytecode
     } catch (error) {
-      console.error(`加载bytecode失败 (${contractType}):`, error)
       throw new Error(`无法加载合约bytecode: ${contractType}`)
     }
   }
@@ -396,7 +390,6 @@ class ContractDeployService {
       const trimmedBytes = bytes.slice(0, endIndex)
       return ethers.toUtf8String(trimmedBytes)
     } catch (error) {
-      console.error('uint256ToString 转换失败:', error, value)
       // 失败时返回原始值的字符串形式
       return String(value)
     }
@@ -443,7 +436,6 @@ class ContractDeployService {
       const gasCost = gasLimit * gasPrice
       return ethers.formatEther(gasCost)
     } catch (error) {
-      console.error('估算gas费用失败:', error)
       return '0'
     }
   }

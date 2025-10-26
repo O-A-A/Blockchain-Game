@@ -333,7 +333,6 @@ const scanNewBlocks = async () => {
       scanMessage.value = ''
     }, 2000)
   } catch (error) {
-    console.error('扫描失败:', error)
     scanMessage.value = `扫描失败: ${error.message || '未知错误'}`
     setTimeout(() => {
       scanMessage.value = ''
@@ -359,18 +358,11 @@ const copyToClipboard = async (text) => {
     await navigator.clipboard.writeText(text)
     showCopySuccess.value = true
   } catch (err) {
-    console.error('复制失败:', err)
   }
 }
 
 // 组件挂载时加载数据
 onMounted(async () => {
-  console.log('CoinListView 挂载')
-  console.log('当前合约数量:', contractsStore.contracts.length)
-  console.log('ERC20代币数量:', contractsStore.erc20Tokens.length)
-  console.log('WBKC代币数量:', contractsStore.wbkcTokens.length)
-  console.log('最后扫描区块:', contractsStore.lastScanBlock)
-  
   // 检查连接状态
   const connectionService = (await import('@/services/connectionService')).default
   if (!connectionService.isConnected()) {

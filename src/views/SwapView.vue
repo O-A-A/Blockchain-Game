@@ -724,7 +724,6 @@ watch([amount, fromCurrency, toCurrency], async () => {
       // 更新输出金额
       outputAmount.value = result;
     } catch (error) {
-      console.error('计算兑换金额出错:', error);
       outputAmount.value = '0';
     }
   } else {
@@ -739,7 +738,6 @@ watch([fromCurrency, toCurrency], async () => {
     const rate = await walletStore.getExchangeRate(fromCurrency.value, toCurrency.value);
     exchangeRate.value = rate;
   } catch (error) {
-    console.error('获取汇率出错:', error);
     // 设置默认值
     exchangeRate.value = fromCurrency.value === 'wBKC' ? '10.00' : '0.10';
   }
@@ -898,7 +896,6 @@ const confirmSwap = async () => {
     showConfirmDialog.value = false
     showResultDialog.value = true
   } catch (error) {
-    console.error('兑换错误:', error)
     swapSuccess.value = false
     swapErrorMessage.value = error?.message || '兑换过程中发生错误'
     
