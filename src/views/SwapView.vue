@@ -261,7 +261,9 @@
       <!-- 右侧市场信息和兑换历史 -->
       <v-col cols="12" md="6">
         <!-- 市场信息卡片 -->
-        <v-card class="mb-6 rounded-lg" elevation="1">
+        <!-- 注释原因：合约不提供24h统计数据（涨跌、最高最低、成交量）和历史价格图表 -->
+        <!-- 可用接口：getExchangeRate()获取当前汇率，GetTwapPrice()获取TWAP价格 -->
+        <!-- <v-card class="mb-6 rounded-lg" elevation="1">
           <v-card-title class="d-flex align-center px-4 pt-4 pb-2">
             <v-icon color="primary" class="mr-2">mdi-chart-line</v-icon>
             <span class="font-weight-bold">币对行情</span>
@@ -307,15 +309,16 @@
               </div>
             </div>
             
-            <!-- 真实图表 -->
             <div class="chart-container mb-4">
               <Line :data="chartData" :options="chartOptions" />
             </div>
           </v-card-text>
-        </v-card>
+        </v-card> -->
         
         <!-- 最近兑换记录 -->
-        <v-card class="rounded-lg" elevation="1">
+        <!-- 注释原因：合约不提供交易历史查询接口 -->
+        <!-- 需要监听Swap事件或使用localStorage存储本地交易记录 -->
+        <!-- <v-card class="rounded-lg" elevation="1">
           <v-card-title class="d-flex align-center px-4 pt-4 pb-2">
             <v-icon color="primary" class="mr-2">mdi-history</v-icon>
             <span class="font-weight-bold">最近兑换</span>
@@ -352,7 +355,7 @@
               查看全部历史
             </v-btn>
           </v-card-actions>
-        </v-card>
+        </v-card> -->
       </v-col>
     </v-row>
 

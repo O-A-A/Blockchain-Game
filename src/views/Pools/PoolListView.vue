@@ -10,6 +10,17 @@
       </v-col>
       <v-col cols="12" md="4" class="text-right">
         <v-btn
+          color="secondary"
+          size="large"
+          prepend-icon="mdi-refresh"
+          @click="loadPools"
+          :loading="loading"
+          rounded="lg"
+          class="mr-2"
+        >
+          刷新
+        </v-btn>
+        <v-btn
           color="primary"
           size="large"
           prepend-icon="mdi-plus"
@@ -21,7 +32,7 @@
       </v-col>
     </v-row>
 
-    <!-- 搜索和统计 -->
+    <!-- 搜索 -->
     <v-row class="mb-6">
       <v-col cols="12" md="6">
         <v-text-field
@@ -35,42 +46,6 @@
         ></v-text-field>
       </v-col>
       <v-col cols="12" md="6">
-        <v-select
-          v-model="sortBy"
-          :items="[
-            { title: '按 TVL 排序', value: 'tvl' },
-            { title: '按 APR 排序', value: 'apr' },
-            { title: '按 24h 交易量排序', value: 'volume' }
-          ]"
-          label="排序方式"
-          variant="outlined"
-          density="compact"
-          rounded="lg"
-        ></v-select>
-      </v-col>
-    </v-row>
-
-    <!-- 统计卡片 -->
-    <v-row class="mb-6">
-      <v-col cols="12" sm="6" md="4">
-        <v-card rounded="lg" elevation="1" class="pa-4">
-          <div class="text-caption text-medium-emphasis mb-1">
-            <v-icon size="small">mdi-water</v-icon>
-            总流动性
-          </div>
-          <div class="text-h6 font-weight-bold">$ 125.3M</div>
-        </v-card>
-      </v-col>
-      <v-col cols="12" sm="6" md="4">
-        <v-card rounded="lg" elevation="1" class="pa-4">
-          <div class="text-caption text-medium-emphasis mb-1">
-            <v-icon size="small">mdi-swap-horizontal</v-icon>
-            24h 交易量
-          </div>
-          <div class="text-h6 font-weight-bold">$ 42.7M</div>
-        </v-card>
-      </v-col>
-      <v-col cols="12" sm="6" md="4">
         <v-card rounded="lg" elevation="1" class="pa-4">
           <div class="text-caption text-medium-emphasis mb-1">
             <v-icon size="small">mdi-information</v-icon>
@@ -84,10 +59,23 @@
     <!-- 池列表 -->
     <v-row>
       <v-col cols="12">
-        <v-card rounded="lg" elevation="2">
-          <div v-if="filteredPools.length === 0" class="pa-8 text-center">
+        <!-- 错误提示 -->
+        <v-alert v-if="error" type="error" rounded="lg" class="mb-4" closable @click:close="error = ''">
+          {{ error }}
+        </v-alert>
+
+        <!-- 加载提示 -->
+        <v-card v-if="loading && pools.length === 0" rounded="lg" elevation="2" class="pa-8 text-center">
+          <v-progress-circular indeterminate color="primary" size="64" class="mb-4"></v-progress-circular>
+          <p class="text-body-1">正在从区块链加载池子数据...</p>
+        </v-card>
+
+        <!-- 池列表 -->
+        <v-card v-else rounded="lg" elevation="2">
+          <div v-if="filteredPools.length === 0 && !loading" class="pa-8 text-center">
             <v-icon size="48" class="text-medium-emphasis mb-2">mdi-database-off</v-icon>
             <p class="text-body-2 text-medium-emphasis">暂无符合条件的流动性池</p>
+            <p class="text-caption text-medium-emphasis mt-2">请先扫描区块链或创建新的流动性池</p>
           </div>
 
           <v-table v-else class="rounded-lg" density="compact">
@@ -96,7 +84,6 @@
                 <th class="text-left text-subtitle-2 font-weight-bold">交易对</th>
                 <th class="text-left text-subtitle-2 font-weight-bold">池信息</th>
                 <th class="text-right text-subtitle-2 font-weight-bold">流动性</th>
-                <th class="text-right text-subtitle-2 font-weight-bold">APR</th>
                 <th class="text-center text-subtitle-2 font-weight-bold">操作</th>
               </tr>
             </thead>
@@ -123,23 +110,13 @@
 
                 <!-- 池信息 -->
                 <td>
-                  <div>
-                    <div class="font-weight-medium">{{ pool.name }}</div>
-                    <div class="text-caption text-medium-emphasis">24h: ${{ pool.volume24h }}</div>
-                  </div>
+                  <div class="font-weight-medium">{{ pool.name }}</div>
                 </td>
 
                 <!-- 流动性 -->
                 <td class="text-right">
                   <div class="font-weight-medium">{{ pool.reserve0 }} {{ pool.token0.symbol }}</div>
                   <div class="text-caption text-medium-emphasis">{{ pool.reserve1 }} {{ pool.token1.symbol }}</div>
-                </td>
-
-                <!-- APR -->
-                <td class="text-right">
-                  <v-chip color="success" text-color="white" size="small">
-                    {{ pool.apr }}
-                  </v-chip>
                 </td>
 
                 <!-- 操作 -->
@@ -167,40 +144,45 @@
   </v-container>
 </template>
 
-<script setup>
-import { ref, computed } from 'vue'
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { POOLS_DATA } from '@/mock/pools'
+import poolService from '@/services/poolService'
+import type { PoolInfo } from '@/services/poolService'
 
 const router = useRouter()
 
 // 响应式数据
 const searchQuery = ref('')
-const sortBy = ref('tvl')
 const showCopySuccess = ref(false)
+const pools = ref<PoolInfo[]>([])
+const loading = ref(false)
+const error = ref('')
 
-// 格式化地址
-const formatAddress = (address) => {
-  if (!address) return ''
-  return address.slice(0, 6) + '...' + address.slice(-4)
+// 加载池子数据
+const loadPools = async () => {
+  loading.value = true
+  error.value = ''
+  
+  try {
+    pools.value = await poolService.getAllPools()
+    console.log('加载了', pools.value.length, '个池子')
+  } catch (err: any) {
+    console.error('加载池子失败:', err)
+    error.value = err.message || '加载失败'
+  } finally {
+    loading.value = false
+  }
 }
 
-// 计算 TVL (Token Value Locked)
-const calculateTVL = (pool) => {
-  const reserve0 = parseFloat(pool.reserve0.replace(/,/g, ''))
-  const reserve1 = parseFloat(pool.reserve1.replace(/,/g, ''))
-  // 假设交换率
-  return reserve0 + reserve1
-}
-
-// 过滤和排序池
+// 过滤池
 const filteredPools = computed(() => {
-  let pools = POOLS_DATA
+  let poolsList = pools.value
 
   // 搜索过滤
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    pools = pools.filter(pool =>
+    poolsList = poolsList.filter(pool =>
       pool.name.toLowerCase().includes(query) ||
       pool.token0.symbol.toLowerCase().includes(query) ||
       pool.token1.symbol.toLowerCase().includes(query) ||
@@ -208,29 +190,11 @@ const filteredPools = computed(() => {
     )
   }
 
-  // 排序
-  const sorted = [...pools]
-  if (sortBy.value === 'tvl') {
-    sorted.sort((a, b) => calculateTVL(b) - calculateTVL(a))
-  } else if (sortBy.value === 'apr') {
-    sorted.sort((a, b) => {
-      const aprA = parseFloat(a.apr)
-      const aprB = parseFloat(b.apr)
-      return aprB - aprA
-    })
-  } else if (sortBy.value === 'volume') {
-    sorted.sort((a, b) => {
-      const volA = parseFloat(a.volume24h.replace(/,/g, ''))
-      const volB = parseFloat(b.volume24h.replace(/,/g, ''))
-      return volB - volA
-    })
-  }
-
-  return sorted
+  return poolsList
 })
 
 // 导航到池详情页
-const goToPoolDetail = (address) => {
+const goToPoolDetail = (address: string) => {
   router.push(`/pooldetail/${address}`)
 }
 
@@ -240,7 +204,7 @@ const goToCreatePool = () => {
 }
 
 // 复制到剪贴板
-const copyToClipboard = async (text) => {
+const copyToClipboard = async (text: string) => {
   try {
     await navigator.clipboard.writeText(text)
     showCopySuccess.value = true
@@ -248,6 +212,11 @@ const copyToClipboard = async (text) => {
     console.error('复制失败:', err)
   }
 }
+
+// 组件挂载时加载数据
+onMounted(() => {
+  loadPools()
+})
 </script>
 
 <style scoped>

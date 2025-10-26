@@ -11,10 +11,11 @@ export const walletService = {
     try {
       const wallet = ethers.Wallet.createRandom()
       
+      const walletWithMnemonic = wallet as ethers.HDNodeWallet
       return {
         address: wallet.address,
         privateKey: wallet.privateKey,
-        mnemonic: wallet.mnemonic?.phrase
+        mnemonic: walletWithMnemonic.mnemonic?.phrase
       }
     } catch (error: any) {
       throw new Error(`创建钱包失败: ${error.message}`)
@@ -48,10 +49,11 @@ export const walletService = {
     try {
       const wallet = ethers.Wallet.fromPhrase(mnemonic)
       
+      const walletWithMnemonic = wallet as ethers.HDNodeWallet
       return {
         address: wallet.address,
         privateKey: wallet.privateKey,
-        mnemonic: wallet.mnemonic?.phrase
+        mnemonic: walletWithMnemonic.mnemonic?.phrase
       }
     } catch (error: any) {
       throw new Error(`恢复钱包失败: ${error.message}`)
@@ -65,9 +67,7 @@ export const walletService = {
     try {
       const wallet = new ethers.Wallet(privateKey)
       
-      const encryptedJson = await wallet.encrypt(password, {
-        scrypt: { N: 131072 }
-      })
+      const encryptedJson = await wallet.encrypt(password)
       
       storageService.saveEncryptedKeystore(encryptedJson)
       storageService.saveWalletAddress(wallet.address)
@@ -87,10 +87,11 @@ export const walletService = {
       }
       const wallet = await ethers.Wallet.fromEncryptedJson(encryptedJson, password)
       
+      const walletWithMnemonic = wallet as ethers.HDNodeWallet
       return {
         address: wallet.address,
         privateKey: wallet.privateKey,
-        mnemonic: wallet.mnemonic?.phrase
+        mnemonic: walletWithMnemonic.mnemonic?.phrase
       }
     } catch (error: any) {
       throw new Error('密码错误或钱包数据损坏')
@@ -169,10 +170,11 @@ export const walletService = {
       storageService.saveEncryptedKeystore(keystoreJson)
       storageService.saveWalletAddress(wallet.address)
       
+      const walletWithMnemonic = wallet as ethers.HDNodeWallet
       return {
         address: wallet.address,
         privateKey: wallet.privateKey,
-        mnemonic: wallet.mnemonic?.phrase
+        mnemonic: walletWithMnemonic.mnemonic?.phrase
       }
     } catch (error: any) {
       throw new Error(`导入 Keystore 失败: ${error.message}`)

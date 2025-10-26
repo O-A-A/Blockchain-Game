@@ -131,22 +131,25 @@ class ContractInteractionService {
     const abi = this.getAbi('erc20')
 
     // 并行获取所有信息
-    const [name, symbol, decimals, totalSupply, url, contractType] = await Promise.all([
-      this.callViewFunction({ address, abi, functionName: 'name' }),
-      this.callViewFunction({ address, abi, functionName: 'symbol' }),
-      this.callViewFunction({ address, abi, functionName: 'decimals' }),
+    const [coinName, totalSupply, imgUrl, owner, contractType] = await Promise.all([
+      this.callViewFunction({ address, abi, functionName: 'coin_name' }),
       this.callViewFunction({ address, abi, functionName: 'totalSupply' }),
-      this.callViewFunction({ address, abi, functionName: 'url' }),
+      this.callViewFunction({ address, abi, functionName: 'img_coin_url' }),
+      this.callViewFunction({ address, abi, functionName: 'coinOwner' }),
       this.callViewFunction({ address, abi, functionName: 'contract_type' })
     ])
 
+    const name = this.uint256ToString(coinName)
+    const symbol = this.deriveSymbolFromName(name)
+
     return {
       address,
-      name: this.uint256ToString(name),
-      symbol: this.uint256ToString(symbol),
-      decimals: Number(decimals),
+      name,
+      symbol,
+      decimals: 18, // 默认18位精度
       totalSupply: totalSupply.toString(),
-      url: this.uint256ToString(url),
+      url: this.uint256ToString(imgUrl),
+      owner,
       contractType: Number(contractType)
     }
   }
@@ -188,22 +191,24 @@ class ContractInteractionService {
   async getWBKCInfo(address: string) {
     const abi = this.getAbi('wbkc')
 
-    const [name, symbol, decimals, totalSupply, url, contractType] = await Promise.all([
-      this.callViewFunction({ address, abi, functionName: 'name' }),
-      this.callViewFunction({ address, abi, functionName: 'symbol' }),
-      this.callViewFunction({ address, abi, functionName: 'decimals' }),
+    const [coinName, totalSupply, imgUrl, owner, contractType] = await Promise.all([
+      this.callViewFunction({ address, abi, functionName: 'coin_name' }),
       this.callViewFunction({ address, abi, functionName: 'totalSupply' }),
-      this.callViewFunction({ address, abi, functionName: 'url' }),
+      this.callViewFunction({ address, abi, functionName: 'img_coin_url' }),
+      this.callViewFunction({ address, abi, functionName: 'coinOwner' }),
       this.callViewFunction({ address, abi, functionName: 'contract_type' })
     ])
 
+    const name = this.uint256ToString(coinName)
+
     return {
       address,
-      name: this.uint256ToString(name),
-      symbol: this.uint256ToString(symbol),
-      decimals: Number(decimals),
+      name,
+      symbol: 'WBKC', // WBKC 固定符号
+      decimals: 18, // 默认18位精度
       totalSupply: totalSupply.toString(),
-      url: this.uint256ToString(url),
+      url: this.uint256ToString(imgUrl),
+      owner,
       contractType: Number(contractType)
     }
   }
@@ -235,24 +240,25 @@ class ContractInteractionService {
   async getAMMInfo(address: string) {
     const abi = this.getAbi('amm')
 
-    const [poolName, tokenA, tokenB, reserveA, reserveB, url, contractType] = await Promise.all([
-      this.callViewFunction({ address, abi, functionName: 'pool_name' }),
-      this.callViewFunction({ address, abi, functionName: 'tokenA' }),
-      this.callViewFunction({ address, abi, functionName: 'tokenB' }),
-      this.callViewFunction({ address, abi, functionName: 'reserveA' }),
-      this.callViewFunction({ address, abi, functionName: 'reserveB' }),
-      this.callViewFunction({ address, abi, functionName: 'url' }),
+    const [poolName, tokenA, tokenB, poolInfo, imgUrl, contractType] = await Promise.all([
+      this.callViewFunction({ address, abi, functionName: 'POOL_NAME' }),
+      this.callViewFunction({ address, abi, functionName: 'tokenAAddress' }),
+      this.callViewFunction({ address, abi, functionName: 'tokenBAddress' }),
+      this.callViewFunction({ address, abi, functionName: 'getPoolInfo' }),
+      this.callViewFunction({ address, abi, functionName: 'pool_img_url' }),
       this.callViewFunction({ address, abi, functionName: 'contract_type' })
     ])
 
+    // poolInfo 返回: [tokenABalance, tokenBBalance, totalLPSupply, k]
     return {
       address,
       poolName: this.uint256ToString(poolName),
       tokenA,
       tokenB,
-      reserveA: reserveA.toString(),
-      reserveB: reserveB.toString(),
-      url: this.uint256ToString(url),
+      reserveA: poolInfo[0].toString(),
+      reserveB: poolInfo[1].toString(),
+      totalLPSupply: poolInfo[2].toString(),
+      url: this.uint256ToString(imgUrl),
       contractType: Number(contractType)
     }
   }
@@ -321,6 +327,16 @@ class ContractInteractionService {
       args: [amountB]
     })
     return result.toString()
+  }
+
+  /**
+   * 从名称派生代币符号
+   */
+  private deriveSymbolFromName(name: string): string {
+    // 简单实现：取前几个字符并转大写
+    if (!name || name.length === 0) return 'UNKNOWN'
+    if (name.length <= 6) return name.toUpperCase()
+    return name.substring(0, 6).toUpperCase()
   }
 
   /**

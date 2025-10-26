@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useWalletStore } from '@/store/wallet'
 import connectionService from '@/services/connectionService'
-import CONFIG from '@/config'
 
 const router = createRouter({
     history: createWebHistory(),

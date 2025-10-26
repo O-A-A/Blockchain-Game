@@ -4,7 +4,6 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from './store/auth'
 import { useWalletStore } from './store/wallet'
 import { useTheme } from 'vuetify'
-import CONFIG from './config'
 
 const drawer = ref(false)
 const theme = useTheme()

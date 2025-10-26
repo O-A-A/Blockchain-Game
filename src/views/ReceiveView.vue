@@ -152,7 +152,9 @@
         </v-card>
 
         <!-- 近期接收记录 -->
-        <v-card class="mt-6 rounded-lg" elevation="2">
+        <!-- 注释原因：合约不提供交易历史查询接口 -->
+        <!-- 需要监听Transfer事件或使用localStorage存储本地交易记录 -->
+        <!-- <v-card class="mt-6 rounded-lg" elevation="2">
           <v-toolbar flat density="compact" color="background">
             <v-toolbar-title class="font-weight-bold">近期接收记录</v-toolbar-title>
             <v-spacer></v-spacer>
@@ -198,7 +200,7 @@
             <v-icon size="large" color="grey" class="mb-2">mdi-tray-arrow-down</v-icon>
             <div class="text-body-1 text-medium-emphasis">暂无接收记录</div>
           </v-card-text>
-        </v-card>
+        </v-card> -->
       </v-col>
     </v-row>
 

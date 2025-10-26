@@ -1,3 +1,10 @@
+<!-- 
+  注意：当前页面显示来自 walletStore.transactions 的交易记录
+  由于合约不提供历史查询接口，交易记录需要通过以下方式之一获取：
+  1. 监听区块链事件（Transfer/Swap/AddLiquidity/RemoveLiquidity）并在链下存储
+  2. 使用 localStorage 存储本地交易记录（当前方案，但无法跨设备同步）
+  3. 部署自己的索引服务（如 The Graph）来查询历史交易
+-->
 <template>
   <v-container>
     <v-card class="pa-6 rounded-lg" elevation="1">

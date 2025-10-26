@@ -253,11 +253,8 @@ class ContractScanService {
       contract.coinOwner()
     ])
 
-    // 导入 contractDeployService 来使用转换函数
-    const { default: ContractDeployService } = await import('./contractDeployService')
-    
-    // 将uint256转为字符串
-    const name = ContractDeployService.uint256ToString(coinName)
+    // 将uint256转为字符串 - 使用本地实现
+    const name = this.uint256ToString(coinName)
     const symbol = this.deriveSymbolFromName(name)
 
     return {
@@ -269,7 +266,7 @@ class ContractScanService {
       name,
       symbol,
       totalSupply: totalSupply.toString(),
-      imgUrl: (await import('./contractDeployService')).default.uint256ToString(imgUrl),
+      imgUrl: this.uint256ToString(imgUrl),
       decimals: 18
     }
   }
@@ -292,9 +289,8 @@ class ContractScanService {
       contract.coinOwner()
     ])
 
-    // 导入 contractDeployService 来使用转换函数
-    const { default: ContractDeployService } = await import('./contractDeployService')
-    const name = ContractDeployService.uint256ToString(coinName)
+    // 将uint256转为字符串 - 使用本地实现
+    const name = this.uint256ToString(coinName)
 
     return {
       address,
@@ -303,7 +299,7 @@ class ContractScanService {
       deployedTime: timestamp,
       owner,
       name,
-      imgUrl: (await import('./contractDeployService')).default.uint256ToString(imgUrl),
+      imgUrl: this.uint256ToString(imgUrl),
       totalSupply: totalSupply.toString(),
       decimals: 18
     }
@@ -317,16 +313,14 @@ class ContractScanService {
     blockNum: number,
     timestamp: number
   ): Promise<AMMContractInfo> {
+    // 使用 contractInteractionService 来获取信息
+    const info = await (await import('./contractInteractionService')).default.getAMMInfo(address)
+    
+    // 获取 owner
     const provider = connectionService.getProvider()
-    const contract = new ethers.Contract(address, AMM_INFO_ABI, provider)
-
-    const [poolName, imgUrl, tokenA, tokenB, owner] = await Promise.all([
-      contract.POOL_NAME(),
-      contract.pool_img_url(),
-      contract.tokenAAddress(),
-      contract.tokenBAddress(),
-      contract.poolOwner()
-    ])
+    const abi = (await import('./contractInteractionService')).default.getAbi('amm')
+    const contract = new ethers.Contract(address, abi, provider)
+    const owner = await contract.poolOwner()
 
     return {
       address,
@@ -334,10 +328,10 @@ class ContractScanService {
       deployedBlock: blockNum,
       deployedTime: timestamp,
       owner,
-      poolName: poolName.toString(),
-      imgUrl: imgUrl.toString(),
-      tokenA,
-      tokenB
+      poolName: info.poolName,
+      imgUrl: info.url,
+      tokenA: info.tokenA,
+      tokenB: info.tokenB
     }
   }
 
@@ -349,6 +343,47 @@ class ContractScanService {
     // 实际可能需要更复杂的逻辑来解析uint256编码的字符串
     if (name.length <= 10) return name.toUpperCase()
     return name.substring(0, 6).toUpperCase()
+  }
+
+  /**
+   * 将 uint256 转换为字符串
+   */
+  private uint256ToString(value: any): string {
+    try {
+      // 如果已经是普通字符串，直接返回
+      if (typeof value === 'string' && !value.startsWith('0x')) {
+        return value
+      }
+
+      // 如果是 BigInt 或数字
+      const numValue = typeof value === 'bigint' ? value : BigInt(value)
+
+      // 如果数值很小，可能是直接存储的数字，返回字符串形式
+      if (numValue < BigInt('0x10000000000000000')) {
+        return numValue.toString()
+      }
+
+      // 转为 hex string
+      const hexStr = '0x' + numValue.toString(16).padStart(64, '0')
+
+      // 转为 bytes
+      const bytes = ethers.getBytes(hexStr)
+
+      // 移除尾部的0
+      let endIndex = bytes.length
+      while (endIndex > 0 && bytes[endIndex - 1] === 0) {
+        endIndex--
+      }
+
+      if (endIndex === 0) return ''
+
+      // 转为字符串
+      const trimmedBytes = bytes.slice(0, endIndex)
+      return ethers.toUtf8String(trimmedBytes)
+    } catch (error) {
+      console.error('uint256ToString 转换失败:', error, value)
+      return String(value)
+    }
   }
 
   /**

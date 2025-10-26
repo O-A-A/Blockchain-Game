@@ -430,9 +430,11 @@
   <script setup>
   import { ref, computed, onMounted, watch } from 'vue';
   import { useWalletStore } from '@/store/wallet';
-  import blockchainService from '@/services/blockchain';
+  import { useContractsStore } from '@/store/contracts';
+  import contractInteractionService from '@/services/contractInteractionService';
   
   const walletStore = useWalletStore();
+  const contractsStore = useContractsStore();
   
   // 流动性操作页面状态
   const activeTab = ref('add');
@@ -475,35 +477,20 @@
         return false;
       }
       
-      // 检查数值是否有效 - 兼容Mock模式的小数
+      // 检查数值是否有效
       const amountANum = parseFloat(amountA.value);
       const amountBNum = parseFloat(amountB.value);
       if (amountANum <= 0 || amountBNum <= 0) {
         return false;
       }
       
-      // 检查余额是否足够 - 兼容Mock模式
+      // 检查余额是否足够
       const wbkcBalanceNum = parseFloat(walletStore.wbkcBalance);
       const e20cBalanceNum = parseFloat(walletStore.e20cBalance);
       
-      // 如果余额是整数格式，尝试使用BigInt比较，否则使用parseFloat
-      let amountAValid, amountBValid;
-      try {
-        // 尝试BigInt比较（真实模式）
-        if (Number.isInteger(amountANum) && Number.isInteger(amountBNum) && 
-            Number.isInteger(wbkcBalanceNum) && Number.isInteger(e20cBalanceNum)) {
-          amountAValid = BigInt(amountA.value) <= BigInt(walletStore.wbkcBalance);
-          amountBValid = BigInt(amountB.value) <= BigInt(walletStore.e20cBalance);
-        } else {
-          // 使用浮点数比较（Mock模式）
-          amountAValid = amountANum <= wbkcBalanceNum;
-          amountBValid = amountBNum <= e20cBalanceNum;
-        }
-      } catch {
-        // BigInt转换失败，使用浮点数比较
-        amountAValid = amountANum <= wbkcBalanceNum;
-        amountBValid = amountBNum <= e20cBalanceNum;
-      }
+      // 使用parseFloat比较余额
+      const amountAValid = amountANum <= wbkcBalanceNum;
+      const amountBValid = amountBNum <= e20cBalanceNum;
       
       return amountAValid && amountBValid;
     } catch (error) {
@@ -562,19 +549,25 @@
   // 方法
   const refreshPoolInfo = async () => {
     try {
-      const info = await blockchainService.getPoolInfo();
+      const ammPool = contractsStore.ammPools[0];
+      if (!ammPool) {
+        console.warn('未找到 AMM 池');
+        return;
+      }
+      
+      const info = await contractInteractionService.getAMMInfo(ammPool.address);
       
       // 直接使用合约返回的原始数值，不进行任何转换
       poolInfo.value = {
-        tokenABalance: info.tokenABalance,
-        tokenBBalance: info.tokenBBalance,
-        totalLPSupply: info.totalLPSupply,
-        k: info.k
+        tokenABalance: info.reserveA,
+        tokenBBalance: info.reserveB,
+        totalLPSupply: info.totalSupply,
+        k: (BigInt(info.reserveA) * BigInt(info.reserveB)).toString()
       };
       
       // 计算总流动性价值 (假设 1 wBKC = $0.1, 1 E20C = $0.01)
-      const wbkcValue = parseInt(info.tokenABalance) * 0.1;
-      const e20cValue = parseInt(info.tokenBBalance) * 0.01;
+      const wbkcValue = parseInt(info.reserveA) * 0.1;
+      const e20cValue = parseInt(info.reserveB) * 0.01;
       totalLiquidityValue.value = (wbkcValue + e20cValue).toFixed(2);
       
     } catch (error) {
@@ -586,9 +579,20 @@
   // 刷新用户LP余额
   const refreshUserLPBalance = async () => {
     try {
-      const balance = await blockchainService.getUserLPBalance(walletStore.address);
+      const ammPool = contractsStore.ammPools[0];
+      if (!ammPool) {
+        console.warn('未找到 AMM 池');
+        return;
+      }
+      
+      const balance = await contractInteractionService.callViewFunction({
+        address: ammPool.address,
+        abi: contractInteractionService.getAbi('amm'),
+        functionName: 'balanceOf',
+        args: [walletStore.address]
+      });
       // 直接使用合约返回的原始数值，不进行任何转换
-      lpBalance.value = balance;
+      lpBalance.value = balance.toString();
       
       // 计算用户提供的代币数量 - 修正映射关系
       if (parseInt(lpBalance.value) > 0 && parseInt(poolInfo.value.totalLPSupply) > 0) {
@@ -632,25 +636,41 @@
         return;
       }
       
+      const ammPool = contractsStore.ammPools[0];
+      if (!ammPool) {
+        console.warn('未找到 AMM 池');
+        return;
+      }
+      
       // 根据当前池子比例自动计算另一个代币数量
       if (amountA.value && parseInt(amountA.value) > 0) {
         // 修正映射关系：amountA.value是wBKC(对应合约B)
         // 如果用户输入了A代币数量(wBKC)，计算出相应的B代币数量(E20C)
         // 使用getAmountAOut来计算wBKC兑换E20C的数量
-        const amountBOut = await blockchainService.getAmountAOut(amountA.value);
-        amountB.value = amountBOut;
+        const amountBOut = await contractInteractionService.callViewFunction({
+          address: ammPool.address,
+          abi: contractInteractionService.getAbi('amm'),
+          functionName: 'getAmountAOut',
+          args: [amountA.value]
+        });
+        amountB.value = amountBOut.toString();
         
         // 显示当前比例
-        if (parseInt(amountA.value) > 0 && parseInt(amountBOut) > 0) {
-          const ratio = parseInt(amountBOut) / parseInt(amountA.value);
+        if (parseInt(amountA.value) > 0 && parseInt(amountBOut.toString()) > 0) {
+          const ratio = parseInt(amountBOut.toString()) / parseInt(amountA.value);
           priceBPerA.value = ratio.toFixed(4);
         }
       } else if (amountB.value && parseInt(amountB.value) > 0) {
         // 修正映射关系：amountB.value是E20C(对应合约A)
         // 如果用户输入了B代币数量(E20C)，计算出相应的A代币数量(wBKC)
         // 使用getAmountBOut来计算E20C兑换wBKC的数量
-        const amountAOut = await blockchainService.getAmountBOut(amountB.value);
-        amountA.value = amountAOut;
+        const amountAOut = await contractInteractionService.callViewFunction({
+          address: ammPool.address,
+          abi: contractInteractionService.getAbi('amm'),
+          functionName: 'getAmountBOut',
+          args: [amountB.value]
+        });
+        amountA.value = amountAOut.toString();
         
         // 显示当前比例
         if (parseInt(amountB.value) > 0 && parseInt(amountAOut) > 0) {
@@ -796,14 +816,26 @@
     errorMessage.value = '';
     
     try {
+      const ammPool = contractsStore.ammPools[0];
+      if (!ammPool) {
+        throw new Error('未找到 AMM 池');
+      }
+      
       // 这里使用原始数值，不需要任何转换
       const amountAValue = amountB.value;  // E20C对应代币A
       const amountBValue = amountA.value;  // wBKC对应代币B
       
+      // 调用 addLiquidity 方法，参数顺序修正
+      const result = await contractInteractionService.sendTransaction({
+        address: ammPool.address,
+        abi: contractInteractionService.getAbi('amm'),
+        functionName: 'addLiquidity',
+        args: [amountAValue, amountBValue]
+      });
       
-      // 调用blockchain.js的添加流动性方法，参数顺序修正
-      const result = await blockchainService.addLiquidity(amountAValue, amountBValue);
-      
+      if (!result.success) {
+        throw new Error(result.error || '添加流动性失败');
+      }
       
       // 刷新数据
       await refreshPoolInfo();
@@ -831,13 +863,25 @@
     errorMessage.value = '';
     
     try {
+      const ammPool = contractsStore.ammPools[0];
+      if (!ammPool) {
+        throw new Error('未找到 AMM 池');
+      }
+      
       // 这里使用原始数值，不需要任何转换
       const lpAmountValue = lpAmount.value;
       
+      // 调用 removeLiquidity 方法
+      const result = await contractInteractionService.sendTransaction({
+        address: ammPool.address,
+        abi: contractInteractionService.getAbi('amm'),
+        functionName: 'removeLiquidity',
+        args: [lpAmountValue]
+      });
       
-      // 调用blockchain.js的移除流动性方法
-      const result = await blockchainService.removeLiquidity(lpAmountValue);
-      
+      if (!result.success) {
+        throw new Error(result.error || '移除流动性失败');
+      }
       
       // 刷新数据
       await refreshPoolInfo();
@@ -886,9 +930,11 @@
   input::-webkit-outer-spin-button,
   input::-webkit-inner-spin-button {
     -webkit-appearance: none;
+    appearance: none;
     margin: 0;
   }
   input[type=number] {
     -moz-appearance: textfield;
+    appearance: textfield;
   }
   </style>

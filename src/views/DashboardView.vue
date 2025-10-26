@@ -9,10 +9,11 @@
             <div class="text-overline text-medium-emphasis mb-1">总资产价值 (USD)</div>
             <div class="d-flex align-center">
               <h1 class="text-h5 font-weight-bold">${{ walletStore.usdValue }}</h1>
-              <v-chip color="success" variant="elevated" size="small" class="ml-3">
+              <!-- 注释原因：合约不提供24h涨跌数据 -->
+              <!-- <v-chip color="success" variant="elevated" size="small" class="ml-3">
                 <v-icon start size="x-small">mdi-trending-up</v-icon>
                 <span class="text-caption">+2.4%</span>
-              </v-chip>
+              </v-chip> -->
             </div>
 
             <!-- 刷新按钮和最后更新时间 -->
@@ -72,7 +73,8 @@
         </v-card>
 
         <!-- 行情走势卡片 -->
-        <v-card class="mb-6 rounded-lg" elevation="1">
+        <!-- 注释原因：合约只提供GetTwapPrice()当前价格，没有历史价格数据接口 -->
+        <!-- <v-card class="mb-6 rounded-lg" elevation="1">
           <v-card-text class="pa-4">
             <div class="d-flex align-center mb-4">
               <div class="text-subtitle-1 font-weight-bold">价格走势</div>
@@ -84,12 +86,11 @@
               </v-chip-group>
             </div>
             
-            <!-- 图表 -->
             <div class="price-chart-container">
               <Line :data="currentChartData" :options="chartOptions" />
             </div>
           </v-card-text>
-        </v-card>
+        </v-card> -->
       </v-col>
 
       <!-- 右侧主内容区域 -->
@@ -207,7 +208,9 @@
         </v-card>
 
         <!-- 市场行情卡片 -->
-        <v-card class="mb-6 rounded-lg" elevation="1">
+        <!-- 注释原因：合约不提供24h涨跌、成交量、市值等统计数据 -->
+        <!-- 可用接口：getExchangeRate()仅返回当前汇率(rateAToB, rateBToA) -->
+        <!-- <v-card class="mb-6 rounded-lg" elevation="1">
           <v-toolbar density="compact" flat color="background">
             <v-toolbar-title class="font-weight-bold">市场行情</v-toolbar-title>
             <v-spacer></v-spacer>
@@ -266,10 +269,11 @@
               </tr>
             </tbody>
           </v-table>
-        </v-card>
+        </v-card> -->
 
          <!-- 近期活动卡片 -->
-         <v-card class="mb-6 rounded-lg" elevation="1">
+         <!-- 注释原因：合约不提供交易历史查询接口，需要监听Transfer/Swap事件或使用localStorage -->
+         <!-- <v-card class="mb-6 rounded-lg" elevation="1">
             <v-toolbar density="compact" flat color="background">
                <v-toolbar-title class="font-weight-bold">近期活动</v-toolbar-title>
                <v-spacer></v-spacer>
@@ -359,7 +363,7 @@
                    </template>
                </v-list-item>
             </v-list>
-         </v-card>
+         </v-card> -->
       </v-col>
     </v-row>
 
@@ -489,7 +493,7 @@ const chartOptions = ref({
       mode: 'index',
       intersect: false,
       callbacks: {
-        label: function(context) {
+        label: function(context: any) {
           return `价格: $${context.parsed.y.toFixed(2)}`;
         }
       }
@@ -511,7 +515,7 @@ const chartOptions = ref({
 });
 
 // 模拟图表数据
-const generatePriceData = (points, volatility = 0.2, startPrice = 100) => {
+const generatePriceData = (points: number, volatility = 0.2, startPrice = 100) => {
   const data = [];
   let price = startPrice;
   for (let i = 0; i < points; i++) {

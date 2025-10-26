@@ -1,6 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import blockchainService, { SwapResult } from '@/services/blockchain'
+import contractInteractionService from '@/services/contractInteractionService'
+
+export interface SwapResult {
+    txHash: string
+    outputAmount: string
+}
 
 export const useWalletStore = defineStore('wallet', () => {
     // 状态
@@ -102,11 +107,11 @@ export const useWalletStore = defineStore('wallet', () => {
             let e20cResult = '0';
             
             if (wbkcToken) {
-                wbkcResult = await blockchainService.getTokenBalance(address.value, wbkcToken.address);
+                wbkcResult = await contractInteractionService.getERC20Balance(wbkcToken.address, address.value);
             }
             
             if (erc20Token) {
-                e20cResult = await blockchainService.getTokenBalance(address.value, erc20Token.address);
+                e20cResult = await contractInteractionService.getERC20Balance(erc20Token.address, address.value);
             }
 
             // 直接使用原始余额值，不进行任何转换
@@ -126,19 +131,39 @@ export const useWalletStore = defineStore('wallet', () => {
         if (!amount || parseFloat(amount) <= 0) return '0';
         
         try {
+            // 从 contractsStore 获取第一个 AMM 池
+            const { useContractsStore } = await import('@/store/contracts');
+            const contractsStore = useContractsStore();
+            const ammPool = contractsStore.ammPools[0];
+            
+            if (!ammPool) {
+                console.warn('未找到 AMM 池');
+                return '0';
+            }
+            
             // 直接使用原始数值，但修正代币映射关系
             let outputAmount;
             
             if (fromCurrency === 'wBKC') {
                 // wBKC对应代币B，调用getAmountAOut
-                outputAmount = await blockchainService.getAmountAOut(amount);
+                outputAmount = await contractInteractionService.callViewFunction({
+                    address: ammPool.address,
+                    abi: contractInteractionService.getAbi('amm'),
+                    functionName: 'getAmountAOut',
+                    args: [amount]
+                });
             } else {
                 // E20C对应代币A，调用getAmountBOut
-                outputAmount = await blockchainService.getAmountBOut(amount);
+                outputAmount = await contractInteractionService.callViewFunction({
+                    address: ammPool.address,
+                    abi: contractInteractionService.getAbi('amm'),
+                    functionName: 'getAmountBOut',
+                    args: [amount]
+                });
             }
             
             // 不进行fromWei转换，直接返回原始输出量
-            return outputAmount;
+            return outputAmount.toString();
         } catch (err) {
             console.error('获取预计兑换金额失败：', err);
             return '0';
@@ -148,14 +173,37 @@ export const useWalletStore = defineStore('wallet', () => {
     // 获取当前汇率
     const getCurrentRates = async () => {
         try {
-            const rates = await blockchainService.getExchangeRate();
-            // 现在汇率是简单的数字字符串，直接使用
+            // 从 contractsStore 获取第一个 AMM 池
+            const { useContractsStore } = await import('@/store/contracts');
+            const contractsStore = useContractsStore();
+            const ammPool = contractsStore.ammPools[0];
+            
+            if (!ammPool) {
+                console.warn('未找到 AMM 池');
+                return {
+                    wbkcToE20c: '0.5',
+                    e20cToWbkc: '2',
+                    rateAToB: '2',
+                    rateBToA: '0.5'
+                };
+            }
+            
+            // 获取池子信息来计算汇率
+            const poolInfo = await contractInteractionService.getAMMInfo(ammPool.address);
+            
+            // 计算汇率: rateAToB = reserveB / reserveA, rateBToA = reserveA / reserveB
+            const reserveA = parseFloat(poolInfo.reserveA);
+            const reserveB = parseFloat(poolInfo.reserveB);
+            
+            const rateAToB = reserveA > 0 ? (reserveB / reserveA).toFixed(4) : '2';
+            const rateBToA = reserveB > 0 ? (reserveA / reserveB).toFixed(4) : '0.5';
+            
             return {
                 // 修正映射关系：wBKC对应B，E20C对应A
-                wbkcToE20c: rates.rateBToA,  // B→A: wBKC→E20C (1 wBKC = 0.5 E20C)
-                e20cToWbkc: rates.rateAToB,  // A→B: E20C→wBKC (1 E20C = 2 wBKC)
-                rateAToB: rates.rateAToB,  // 保留原字段，表示A→B (E20C→wBKC)
-                rateBToA: rates.rateBToA   // 保留原字段，表示B→A (wBKC→E20C)
+                wbkcToE20c: rateBToA,  // B→A: wBKC→E20C
+                e20cToWbkc: rateAToB,  // A→B: E20C→wBKC
+                rateAToB: rateAToB,    // 保留原字段，表示A→B (E20C→wBKC)
+                rateBToA: rateBToA     // 保留原字段，表示B→A (wBKC→E20C)
             };
         } catch (err) {
             console.error('获取汇率失败：', err);
@@ -234,6 +282,16 @@ export const useWalletStore = defineStore('wallet', () => {
                 return { success: false, error: error.value };
             }
 
+            // 从 contractsStore 获取第一个 AMM 池
+            const { useContractsStore } = await import('@/store/contracts');
+            const contractsStore = useContractsStore();
+            const ammPool = contractsStore.ammPools[0];
+            
+            if (!ammPool) {
+                error.value = '未找到 AMM 池';
+                return { success: false, error: error.value };
+            }
+            
             // 直接使用原始数字（不转换为wei）
             // 注意：合约接受的是原始整数值，不需要进行单位转换
             const amountForSwap: string = amount;
@@ -244,22 +302,38 @@ export const useWalletStore = defineStore('wallet', () => {
             
             if (fromCurrency === 'wBKC' && toCurrency === 'E20C') {
                 // 修正映射关系：wBKC对应代币B，E20C对应代币A
-                const result = await blockchainService.swapBforA(amountForSwap);
-                if (typeof result === 'string') {
-                    txHash = result;
-                } else {
-                    txHash = result.txHash;
-                    outputAmount = result.outputAmount;
+                const result = await contractInteractionService.sendTransaction({
+                    address: ammPool.address,
+                    abi: contractInteractionService.getAbi('amm'),
+                    functionName: 'swapBForA',
+                    args: [amountForSwap]
+                });
+                
+                if (!result.success || !result.hash) {
+                    error.value = result.error || '兑换失败';
+                    return { success: false, error: error.value };
                 }
+                
+                txHash = result.hash;
+                // 获取实际输出金额
+                outputAmount = await getEstimatedOutput(fromCurrency, amount);
             } else if (fromCurrency === 'E20C' && toCurrency === 'wBKC') {
                 // 修正映射关系：E20C对应代币A，wBKC对应代币B
-                const result = await blockchainService.swapAforB(amountForSwap);
-                if (typeof result === 'string') {
-                    txHash = result;
-                } else {
-                    txHash = result.txHash;
-                    outputAmount = result.outputAmount;
+                const result = await contractInteractionService.sendTransaction({
+                    address: ammPool.address,
+                    abi: contractInteractionService.getAbi('amm'),
+                    functionName: 'swapAForB',
+                    args: [amountForSwap]
+                });
+                
+                if (!result.success || !result.hash) {
+                    error.value = result.error || '兑换失败';
+                    return { success: false, error: error.value };
                 }
+                
+                txHash = result.hash;
+                // 获取实际输出金额
+                outputAmount = await getEstimatedOutput(fromCurrency, amount);
             } else {
                 error.value = '不支持的兑换对';
                 return { success: false, error: error.value };
