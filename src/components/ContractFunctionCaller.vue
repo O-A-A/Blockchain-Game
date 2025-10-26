@@ -10,6 +10,9 @@
       <v-select
         v-model="selectedFunction"
         :items="functionItems"
+        item-title="name"
+        item-value="name"
+        return-object
         label="选择函数"
         variant="outlined"
         density="comfortable"
@@ -160,17 +163,15 @@ const functions = computed(() => {
 // 函数列表项
 const functionItems = computed(() => {
   return functions.value.map((func: any) => ({
-    title: func.name,
-    value: func.name,
+    title: func.name, // 保留以供其他地方使用，但 v-select 将使用 'name'
+    value: func,      // v-select 将使用 'name' 作为 value 键
     ...func
   }))
 })
 
 // 当函数改变时
-const onFunctionChange = () => {
-  const func = functions.value.find((f: any) => f.name === selectedFunction.value)
+const onFunctionChange = (func: any) => {
   if (func) {
-    selectedFunction.value = func
     // 重置参数
     functionParams.value = new Array(func.inputs?.length || 0).fill('')
     ethValue.value = ''
@@ -180,8 +181,11 @@ const onFunctionChange = () => {
 
 // 暴露方法给父组件（支持预填充参数）
 const setSelectedFunction = (functionName: string, prefillParams?: string[]) => {
-  selectedFunction.value = functionName
-  onFunctionChange()
+  const func = functions.value.find((f: any) => f.name === functionName)
+  if (func) {
+    selectedFunction.value = func
+    onFunctionChange(func)
+  }
   
   // 如果提供了预填充参数，设置它们
   if (prefillParams && prefillParams.length > 0) {

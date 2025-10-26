@@ -414,8 +414,7 @@ const formatBalance = (balance: string | number) => {
     if (!tokenInfo.value) return '0'
     
     const balanceStr = typeof balance === 'string' ? balance : balance.toString()
-    const formatted = ethers.formatUnits(balanceStr, tokenInfo.value.decimals)
-    const num = parseFloat(formatted)
+    const num = parseFloat(balanceStr)
     
     if (num === 0) return '0'
     if (num < 0.000001) return num.toExponential(4)

@@ -472,16 +472,6 @@ onMounted(() => {
   height: 100%;
 }
 
-.qr-code-actual > svg {
-  /* width: 100% !important; */ /* Let options.width control size */
-  /* height: 100% !important; */ /* Let options.width control size */
-}
-
-/* Added to target svg if vue-qr wraps it in a div when using v-html */
-.qr-code-actual > div > svg {
-    /* Let options.width control size */
-}
-
 .no-wallet-placeholder {
   width: 100%;
   height: 100%;

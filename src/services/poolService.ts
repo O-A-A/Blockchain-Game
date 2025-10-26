@@ -11,8 +11,6 @@ export interface PoolInfo {
   token1: TokenInfo
   reserve0: string // 格式化后的数量
   reserve1: string // 格式化后的数量
-  reserve0Raw: string // 原始wei数量
-  reserve1Raw: string // 原始wei数量
   fee: string
   price: string // token0/token1 的价格
   userLpBalance?: string
@@ -25,7 +23,6 @@ export interface TokenInfo {
   address: string
   symbol: string
   name: string
-  decimals: number
 }
 
 /**
@@ -154,18 +151,14 @@ class PoolService {
             address: tokenAAddress,
             symbol: 'NaN',
             name: 'NaN',
-            decimals: 18
           },
           token1: {
             address: tokenBAddress,
             symbol: 'NaN',
             name: 'NaN',
-            decimals: 18
           },
           reserve0: 'NaN',
           reserve1: 'NaN',
-          reserve0Raw: '0',
-          reserve1Raw: '0',
           fee: 'NaN',
           price: 'NaN',
           userLpBalance: 'NaN',
@@ -185,29 +178,23 @@ class PoolService {
       const reserve0Raw = poolInfo[0].toString()
       const reserve1Raw = poolInfo[1].toString()
 
-      // 格式化储备量
-      const reserve0 = ethers.formatUnits(reserve0Raw, token0Info.decimals)
-      const reserve1 = ethers.formatUnits(reserve1Raw, token1Info.decimals)
-
       // 计算价格 (token0/token1)
-      const price = this.calculatePrice(reserve0Raw, reserve1Raw, token0Info.decimals, token1Info.decimals)
+      const price = this.calculatePrice(reserve0Raw, reserve1Raw)
 
       // 计算手续费百分比
       const feePercent = (Number(feeRate) / Number(feeDenominator) * 100).toFixed(2)
 
       // 格式化 LP 余额
-      const userLpBalanceFormatted = ethers.formatUnits(userLpBalance.toString(), 18)
-      const totalLpSupplyFormatted = ethers.formatUnits(totalLpSupply.toString(), 18)
+      const userLpBalanceFormatted = userLpBalance.toString()
+      const totalLpSupplyFormatted = totalLpSupply.toString()
 
       return {
         address: poolAddress,
         name: this.uint256ToString(poolName),
         token0: token0Info,
         token1: token1Info,
-        reserve0: this.formatNumber(reserve0),
-        reserve1: this.formatNumber(reserve1),
-        reserve0Raw,
-        reserve1Raw,
+        reserve0: this.formatNumber(reserve0Raw),
+        reserve1: this.formatNumber(reserve1Raw),
         fee: `${feePercent}%`,
         price: this.formatNumber(price),
         userLpBalance: this.formatNumber(userLpBalanceFormatted),
@@ -242,7 +229,6 @@ class PoolService {
           address: tokenAddress,
           symbol: info.symbol,
           name: info.name,
-          decimals: info.decimals
         }
       }
 
@@ -252,7 +238,6 @@ class PoolService {
         address: tokenAddress,
         symbol: info.symbol,
         name: info.name,
-        decimals: info.decimals
       }
     } catch (error) {
       // 返回默认值
@@ -260,7 +245,6 @@ class PoolService {
         address: tokenAddress,
         symbol: 'UNKNOWN',
         name: 'Unknown Token',
-        decimals: 18
       }
     }
   }
@@ -413,10 +397,10 @@ class PoolService {
   /**
    * 计算价格
    */
-  private calculatePrice(reserve0: string, reserve1: string, decimals0: number, decimals1: number): string {
+  private calculatePrice(reserve0: string, reserve1: string): string {
     try {
-      const reserve0Num = Number(ethers.formatUnits(reserve0, decimals0))
-      const reserve1Num = Number(ethers.formatUnits(reserve1, decimals1))
+      const reserve0Num = Number(reserve0)
+      const reserve1Num = Number(reserve1)
       
       if (reserve1Num === 0) return '0'
       

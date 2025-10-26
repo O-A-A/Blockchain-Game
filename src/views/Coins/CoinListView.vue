@@ -122,7 +122,6 @@
                     </v-avatar>
                     <div>
                       <div class="font-weight-medium">{{ token.name || '未命名' }}</div>
-                      <div class="text-caption text-medium-emphasis">{{ token.symbol || 'N/A' }}</div>
                     </div>
                   </div>
                 </td>

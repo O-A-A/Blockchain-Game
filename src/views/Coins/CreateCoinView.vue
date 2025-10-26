@@ -278,10 +278,8 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import contractDeployService from '@/services/contractDeployService'
-import { useContractsStore } from '@/store/contracts'
 
 const router = useRouter()
-const contractsStore = useContractsStore()
 
 const tokenType = ref('erc20')
 const form = ref(null)
@@ -300,7 +298,6 @@ const deployedToken = ref({
   symbol: '',
   address: '',
   type: '',
-  decimals: 18,
   initialSupply: '0'
 })
 
@@ -315,20 +312,14 @@ const deployToken = async () => {
     let result
 
     if (tokenType.value === 'erc20') {
-      // 部署 ERC20 代币
-      // 正在部署 ERC20 代币
-      deployProgress.value = '正在部署 ERC20 代币...'
-
+      console.log("deploying ERC20 ...")
       result = await contractDeployService.deployERC20({
         name: formData.value.name,
         totalSupply: formData.value.initialSupply,
         imgUrl: formData.value.imgUrl || ''
       })
     } else {
-      // 部署 WBKC 代币
-      // 正在部署 WBKC 代币
-      deployProgress.value = '正在部署 WBKC 代币...'
-
+      console.log("deploying WBKC ...")
       result = await contractDeployService.deployWBKC({
         name: formData.value.name,
         imgUrl: formData.value.imgUrl || ''
@@ -344,16 +335,12 @@ const deployToken = async () => {
       throw new Error('部署结果不完整')
     }
 
-    // 不需要再次添加到store，因为 deployService 已经添加了
-    // contractsStore.addContract(result.contractInfo)
-
     // 设置部署结果
     deployedToken.value = {
       name: result.contractInfo.name || formData.value.name,
       symbol: result.contractInfo.symbol || 'TOKEN',
       address: result.contractAddress,
       type: tokenType.value,
-      decimals: 18,
       initialSupply: tokenType.value === 'erc20' ? formData.value.initialSupply : '0'
     }
 

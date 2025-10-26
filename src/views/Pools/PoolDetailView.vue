@@ -345,8 +345,8 @@ const loadTokenBalances = async () => {
       poolService.getTokenBalance(pool.value.token1.address, userAddress.value)
     ])
     
-    token0Balance.value = ethers.formatUnits(balance0, pool.value.token0.decimals)
-    token1Balance.value = ethers.formatUnits(balance1, pool.value.token1.decimals)
+    token0Balance.value = balance0
+    token1Balance.value = balance1
   } catch (err: any) {
     // 获取余额失败，静默处理
     token0Balance.value = '0'

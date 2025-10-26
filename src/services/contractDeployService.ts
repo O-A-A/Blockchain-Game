@@ -49,9 +49,8 @@ class ContractDeployService {
 
       // 参数处理：直接传递字符串，让 ethers.js 自动转换
       // 完全遵循 app.js 的做法
-      const nameParam = params.name || ''
-      const totalSupplyParam = String(params.totalSupply)
-      const imgUrlParam = params.imgUrl || ''
+      const nameParam = params.name || 0
+      const imgUrlParam = params.imgUrl || 0
 
       onProgress?.('创建合约工厂...')
 
@@ -61,7 +60,7 @@ class ContractDeployService {
       onProgress?.('发送部署交易...')
 
       // 部署合约
-      const contract = await factory.deploy(nameParam, totalSupplyParam, imgUrlParam)
+      const contract = await factory.deploy(nameParam, params.totalSupply, imgUrlParam)
 
       const deployTx = contract.deploymentTransaction()
       if (!deployTx) {
@@ -90,15 +89,13 @@ class ContractDeployService {
 
       const contractInfo: ContractInfo = {
         address: contractAddress,
-        type: 0, // ERC20
+        type: 0, 
         deployedBlock: receipt.blockNumber || 0,
         deployedTime: Date.now(),
         owner: wallet.address,
         name: params.name,
-        symbol: this.deriveSymbol(params.name),
-        totalSupply: totalSupplyParam.toString(),
-        imgUrl: params.imgUrl || '',
-        decimals: 18
+        totalSupply: params.totalSupply,
+        imgUrl: params.imgUrl || 0,
       }
 
       // 添加到store
@@ -184,9 +181,8 @@ class ContractDeployService {
         deployedTime: Date.now(),
         owner: wallet.address,
         name: params.name,
-        imgUrl: params.imgUrl || '',
+        imgUrl: params.imgUrl || 0,
         totalSupply: totalSupply.toString(),
-        decimals: 18
       }
 
       contractsStore.addContract(contractInfo)
@@ -283,8 +279,8 @@ class ContractDeployService {
         deployedBlock: receipt.blockNumber || 0,
         deployedTime: Date.now(),
         owner: wallet.address,
-        poolName: params.poolName,
-        imgUrl: params.imgUrl || '',
+        name: params.poolName,
+        imgUrl: params.imgUrl || 0,
         tokenA: params.tokenA,
         tokenB: params.tokenB
       }

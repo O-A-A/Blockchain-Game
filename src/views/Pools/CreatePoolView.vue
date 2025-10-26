@@ -18,7 +18,6 @@
 
           <v-card-text class="pa-6">
             <v-row align="center">
-              <!-- Token A 选择 -->
               <v-col cols="12" md="5">
                 <v-select
                   v-model="formData.tokenA"
@@ -32,27 +31,12 @@
                   rounded="lg"
                   :rules="[v => !!v || '请选择代币 A']"
                 >
-                  <template v-slot:item="{ props, item }">
-                    <v-list-item v-bind="props">
-                      <template v-slot:prepend>
-                        <v-avatar size="32" :color="item.raw.type === 0 ? 'primary' : 'secondary'">
-                          <span class="text-white text-caption font-weight-bold">
-                            {{ item.raw.symbol ? item.raw.symbol.charAt(0) : 'T' }}
-                          </span>
-                        </v-avatar>
-                      </template>
-                      <v-list-item-title>{{ item.raw.symbol }}</v-list-item-title>
-                      <v-list-item-subtitle class="text-caption">
-                        {{ item.raw.name }}
-                      </v-list-item-subtitle>
-                    </v-list-item>
-                  </template>
                 </v-select>
 
                 <!-- Token A 信息 -->
                 <v-card v-if="selectedTokenA" variant="outlined" rounded="lg" class="pa-3 mt-2">
                   <div class="text-caption text-medium-emphasis">代币 A</div>
-                  <div class="font-weight-medium">{{ selectedTokenA.symbol }}</div>
+                  <div class="font-weight-medium">{{ selectedTokenA?.name }}</div>
                   <div class="text-caption text-medium-emphasis font-mono">{{ formatAddress(selectedTokenA.address) }}</div>
                 </v-card>
               </v-col>
@@ -84,27 +68,12 @@
                   rounded="lg"
                   :rules="[v => !!v || '请选择代币 B']"
                 >
-                  <template v-slot:item="{ props, item }">
-                    <v-list-item v-bind="props">
-                      <template v-slot:prepend>
-                        <v-avatar size="32" :color="item.raw.type === 0 ? 'primary' : 'secondary'">
-                          <span class="text-white text-caption font-weight-bold">
-                            {{ item.raw.symbol ? item.raw.symbol.charAt(0) : 'T' }}
-                          </span>
-                        </v-avatar>
-                      </template>
-                      <v-list-item-title>{{ item.raw.symbol }}</v-list-item-title>
-                      <v-list-item-subtitle class="text-caption">
-                        {{ item.raw.name }}
-                      </v-list-item-subtitle>
-                    </v-list-item>
-                  </template>
                 </v-select>
 
                 <!-- Token B 信息 -->
                 <v-card v-if="selectedTokenB" variant="outlined" rounded="lg" class="pa-3 mt-2">
                   <div class="text-caption text-medium-emphasis">代币 B</div>
-                  <div class="font-weight-medium">{{ selectedTokenB.symbol }}</div>
+                  <div class="font-weight-medium">{{ selectedTokenB?.name }}</div>
                   <div class="text-caption text-medium-emphasis font-mono">{{ formatAddress(selectedTokenB.address) }}</div>
                 </v-card>
               </v-col>
@@ -124,7 +93,7 @@
               variant="tonal"
               class="mt-4"
             >
-              <div class="font-weight-bold">交易对: {{ selectedTokenA.symbol }}/{{ selectedTokenB.symbol }}</div>
+              <div class="font-weight-bold">交易对: {{ selectedTokenA.address }}/{{ selectedTokenB.address }}</div>
             </v-alert>
           </v-card-text>
         </v-card>
@@ -235,7 +204,7 @@
           <div class="mb-4">
             <div class="text-caption text-medium-emphasis mb-1">交易对</div>
             <div class="text-body-1 font-weight-medium">
-              {{ selectedTokenA?.symbol || 'Token A' }} / {{ selectedTokenB?.symbol || 'Token B' }}
+              {{ selectedTokenA?.address || '0x NULL' }} / {{ selectedTokenB?.address || '0x NULL'}}
             </div>
           </div>
 
@@ -294,8 +263,8 @@ const contractsStore = useContractsStore()
 const formData = ref({
   tokenA: '',
   tokenB: '',
-  poolName: '',
-  imgUrl: ''
+  poolName: -1,
+  imgUrl: -1
 })
 
 const isLoading = ref(false)
@@ -304,7 +273,7 @@ const showCopySuccess = ref(false)
 
 const deployedPool = ref({
   address: '',
-  poolName: '',
+  poolName: -1,
   tokenA: '',
   tokenB: ''
 })
@@ -314,7 +283,7 @@ const tokenOptions = computed(() => {
   const allTokens = contractsStore.allTokens
   return allTokens.map(token => ({
     ...token,
-    label: `${token.symbol || 'N/A'} - ${token.name || '未命名'}`,
+    label: `${token.address || 'N/A'} - ${token.name || '未命名'}`,
   }))
 })
 
@@ -387,8 +356,8 @@ const deployPool = async () => {
     formData.value = {
       tokenA: '',
       tokenB: '',
-      poolName: '',
-      imgUrl: ''
+      poolName: -1,
+      imgUrl: -1
     }
   } catch (error: any) {
     alert(`部署失败: ${error.message || '未知错误'}`)

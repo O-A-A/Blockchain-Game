@@ -237,28 +237,22 @@ class ContractScanService {
     const provider = connectionService.getProvider()
     const contract = new ethers.Contract(address, TOKEN_INFO_ABI, provider)
 
-    const [coinName, imgUrl, totalSupply, owner] = await Promise.all([
+    const [coinName, imgUrl, totalSupply, coinOwner] = await Promise.all([
       contract.coin_name(),
       contract.img_coin_url(),
       contract.totalSupply(),
       contract.coinOwner()
     ])
 
-    // 将uint256转为字符串 - 使用本地实现
-    const name = this.uint256ToString(coinName)
-    const symbol = this.deriveSymbolFromName(name)
-
     return {
       address,
       type: 0,
       deployedBlock: blockNum,
       deployedTime: timestamp,
-      owner,
-      name,
-      symbol,
-      totalSupply: totalSupply.toString(),
-      imgUrl: this.uint256ToString(imgUrl),
-      decimals: 18
+      owner: coinOwner,
+      name: coinName,
+      totalSupply: totalSupply,
+      imgUrl: imgUrl,
     }
   }
 
@@ -273,26 +267,22 @@ class ContractScanService {
     const provider = connectionService.getProvider()
     const contract = new ethers.Contract(address, TOKEN_INFO_ABI, provider)
 
-    const [coinName, imgUrl, totalSupply, owner] = await Promise.all([
+    const [coinName, imgUrl, totalSupply, coinOwner] = await Promise.all([
       contract.coin_name(),
       contract.img_coin_url(),
       contract.totalSupply(),
       contract.coinOwner()
     ])
 
-    // 将uint256转为字符串 - 使用本地实现
-    const name = this.uint256ToString(coinName)
-
     return {
       address,
       type: 1,
       deployedBlock: blockNum,
       deployedTime: timestamp,
-      owner,
-      name,
-      imgUrl: this.uint256ToString(imgUrl),
-      totalSupply: totalSupply.toString(),
-      decimals: 18
+      owner: coinOwner,
+      name: coinName,
+      totalSupply: totalSupply,
+      imgUrl: imgUrl,
     }
   }
 
@@ -323,8 +313,8 @@ class ContractScanService {
         deployedBlock: blockNum,
         deployedTime: timestamp,
         owner,
-        poolName: this.uint256ToString(poolName),
-        imgUrl: this.uint256ToString(imgUrl),
+        name: poolName,
+        imgUrl: imgUrl,
         tokenA: tokenAAddress,
         tokenB: tokenBAddress
       }
@@ -337,8 +327,8 @@ class ContractScanService {
         deployedBlock: blockNum,
         deployedTime: timestamp,
         owner: ethers.ZeroAddress,
-        poolName: 'Unknown Pool',
-        imgUrl: '',
+        name: -1,
+        imgUrl: -1,
         tokenA: ethers.ZeroAddress,
         tokenB: ethers.ZeroAddress
       }

@@ -25,11 +25,9 @@ export interface BaseContractInfo {
  */
 export interface ERC20ContractInfo extends BaseContractInfo {
   type: ContractType.ERC20
-  name: string              // 代币名称（实际是uint256）
-  symbol: string            // 代币符号（从名称派生）
-  totalSupply: string       // 总供应量
-  imgUrl: string            // 图片URL（uint256）
-  decimals: number          // 小数位数（通常是18）
+  name: number              // 代币名称（实际是uint256）
+  totalSupply: number       // 总供应量
+  imgUrl: number            // 图片URL（uint256）
 }
 
 /**
@@ -37,10 +35,9 @@ export interface ERC20ContractInfo extends BaseContractInfo {
  */
 export interface WBKCContractInfo extends BaseContractInfo {
   type: ContractType.WBKC
-  name: string              // 代币名称（uint256）
-  imgUrl: string            // 图片URL（uint256）
-  totalSupply: string       // 总供应量
-  decimals: number          // 小数位数（通常是18）
+  name: number            
+  imgUrl: number      
+  totalSupply: number
 }
 
 /**
@@ -48,12 +45,10 @@ export interface WBKCContractInfo extends BaseContractInfo {
  */
 export interface AMMContractInfo extends BaseContractInfo {
   type: ContractType.AMM
-  poolName: string          // 池名称（uint256）
-  imgUrl: string            // 图片URL（uint256）
+  name: number
+  imgUrl: number
   tokenA: string            // Token A地址
   tokenB: string            // Token B地址
-  tokenASymbol?: string     // Token A符号（可选，通过查询获得）
-  tokenBSymbol?: string     // Token B符号（可选，通过查询获得）
   reserves?: {              // 储备量
     tokenA: string
     tokenB: string
@@ -83,17 +78,17 @@ export interface ScanProgress {
  * 合约部署参数 - ERC20
  */
 export interface DeployERC20Params {
-  name: string              // 名称（字符串，ethers.js 会自动处理）
-  totalSupply: string       // 初始供应量（字符串格式的数字）
-  imgUrl: string            // 图片URL（字符串，ethers.js 会自动处理）
+  name: number           
+  totalSupply: number     
+  imgUrl: number     
 }
 
 /**
  * 合约部署参数 - WBKC
  */
 export interface DeployWBKCParams {
-  name: string              // 名称（字符串，ethers.js 会自动处理）
-  imgUrl: string            // 图片URL（字符串，ethers.js 会自动处理）
+  name: number         
+  imgUrl: number
 }
 
 /**
@@ -102,8 +97,8 @@ export interface DeployWBKCParams {
 export interface DeployAMMParams {
   tokenA: string            // Token A地址
   tokenB: string            // Token B地址
-  poolName: string          // 池名称（字符串，ethers.js 会自动处理）
-  imgUrl: string            // 图片URL（字符串，ethers.js 会自动处理）
+  poolName: number 
+  imgUrl: number
 }
 
 /**

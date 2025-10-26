@@ -520,7 +520,7 @@
       }
       
       isLoading.value = false;
-    } catch (error: any) {
+    } catch (error) {
       isLoading.value = false;
       errorMessage.value = error?.message || '加载数据失败';
     }

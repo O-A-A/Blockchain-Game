@@ -8,7 +8,6 @@ import type {
   AMMContractInfo,
   ContractType,
   ScanProgress,
-  ContractFilterOptions
 } from '@/types/contracts'
 
 const STORAGE_KEY = 'brokerfi_contracts'
@@ -150,47 +149,6 @@ export const useContractsStore = defineStore('contracts', () => {
   }
   
   /**
-   * 过滤合约
-   */
-  function filterContracts(options: ContractFilterOptions): ContractInfo[] {
-    // 首先过滤掉无效的元素
-    let filtered = contracts.value.filter(c => c && c.address)
-
-    // 按类型过滤
-    if (options.type !== undefined) {
-      const types = Array.isArray(options.type) ? options.type : [options.type]
-      filtered = filtered.filter(c => c && types.includes(c.type))
-    }
-
-    // 按搜索关键词过滤
-    if (options.searchQuery) {
-      const query = options.searchQuery.toLowerCase()
-      filtered = filtered.filter(c => {
-        if (!c || !c.address) return false
-
-        const address = c.address.toLowerCase()
-        let name = ''
-
-        if ('name' in c) {
-          name = c.name.toLowerCase()
-        } else if ('poolName' in c) {
-          name = c.poolName.toLowerCase()
-        }
-
-        return address.includes(query) || name.includes(query)
-      })
-    }
-
-    // 按拥有者过滤
-    if (options.owner) {
-      const ownerLower = options.owner.toLowerCase()
-      filtered = filtered.filter(c => c && c.owner && c.owner.toLowerCase() === ownerLower)
-    }
-
-    return filtered
-  }
-  
-  /**
    * 更新扫描进度
    */
   function updateScanProgress(progress: Partial<ScanProgress>) {
@@ -328,7 +286,6 @@ export const useContractsStore = defineStore('contracts', () => {
     removeContract,
     getContractByAddress,
     getContractsByType,
-    filterContracts,
     updateScanProgress,
     startScan,
     completeScan,
