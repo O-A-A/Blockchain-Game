@@ -53,22 +53,43 @@ const logout = () => {
   router.push('/login')
 }
 
-// 初始化钱包 - 自动使用演示账户
+// 初始化钱包 - 检查是否有保存的登录信息并恢复连接
 onMounted(async () => {
   try {
-    // 首先确保使用演示账户
-    if (!walletStore.address) {
-      walletStore.setAddress(CONFIG.DEMO_ACCOUNT)
-    }
-    // 然后初始化钱包
-    await walletStore.init()
+    // 尝试从sessionStorage恢复连接（如果在当前会话中）
+    const sessionNodeUrl = sessionStorage.getItem('currentNodeUrl')
+    const sessionPrivateKey = sessionStorage.getItem('currentPrivateKey')
+    const savedAddress = localStorage.getItem('walletAddress')
+    const savedNodeUrl = localStorage.getItem('nodeUrl')
     
-    // 如果在登录或注册页面，重定向到仪表板
-    if (router.currentRoute.value.path === '/login' || router.currentRoute.value.path === '/register') {
-      router.push('/dashboard')
+    if (sessionNodeUrl && sessionPrivateKey) {
+      // 当前会话中有连接信息，直接恢复
+      const { default: connectionService } = await import('@/services/connectionService')
+      await connectionService.connect(sessionNodeUrl, sessionPrivateKey)
+      
+      walletStore.setAddress(savedAddress || connectionService.getAddress())
+      walletStore.setLoggedIn(true)
+      await walletStore.init()
+    } else if (savedAddress && savedNodeUrl) {
+      // 有保存的地址但没有会话连接，需要用户重新登录以输入密码
+      console.log('检测到保存的登录信息，但会话已过期，需要重新登录')
+      // 清除登录状态，强制重新登录
+      localStorage.removeItem('walletAddress')
+      localStorage.removeItem('nodeUrl')
+      if (router.currentRoute.value.path !== '/login' && router.currentRoute.value.path !== '/register') {
+        router.push('/login')
+      }
+    } else {
+      // 没有保存的登录信息，重定向到登录页
+      if (router.currentRoute.value.path !== '/login' && router.currentRoute.value.path !== '/register') {
+        router.push('/login')
+      }
     }
   } catch (error) {
     console.error('钱包初始化失败:', error)
+    // 如果恢复失败，清除会话数据并跳转到登录页
+    sessionStorage.clear()
+    router.push('/login')
   }
 })
 </script>

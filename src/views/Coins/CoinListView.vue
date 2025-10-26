@@ -22,8 +22,8 @@
     </v-row>
 
     <!-- 搜索和筛选栏 -->
-    <v-row class="mb-6">
-      <v-col cols="12" md="6">
+    <v-row class="mb-6" align="center">
+      <v-col cols="12" md="4">
         <v-text-field
           v-model="searchQuery"
           label="搜索代币名称或符号"
@@ -34,7 +34,7 @@
           rounded="lg"
         ></v-text-field>
       </v-col>
-      <v-col cols="12" md="6">
+      <v-col cols="12" md="3">
         <v-select
           v-model="filterType"
           :items="[
@@ -47,6 +47,41 @@
           density="compact"
           rounded="lg"
         ></v-select>
+      </v-col>
+      <v-col cols="12" md="5" class="text-right">
+        <v-btn
+          color="info"
+          variant="outlined"
+          prepend-icon="mdi-refresh"
+          @click="scanNewBlocks"
+          :loading="isLoading"
+          :disabled="isLoading"
+          class="mr-2"
+        >
+          刷新新区块
+        </v-btn>
+        <v-btn
+          color="secondary"
+          prepend-icon="mdi-radar"
+          @click="scanContracts"
+          :loading="isLoading"
+          :disabled="isLoading"
+        >
+          扫描区块链
+        </v-btn>
+      </v-col>
+    </v-row>
+
+    <!-- 扫描状态提示 -->
+    <v-row v-if="scanMessage" class="mb-4">
+      <v-col cols="12">
+        <v-alert 
+          :type="isLoading ? 'info' : 'success'" 
+          variant="tonal"
+          :icon="isLoading ? 'mdi-loading mdi-spin' : 'mdi-check-circle'"
+        >
+          {{ scanMessage }}
+        </v-alert>
       </v-col>
     </v-row>
 
@@ -82,17 +117,17 @@
               >
                 <td>
                   <div class="d-flex align-center py-2">
-                    <v-avatar :color="token.color" size="32" class="mr-3">
-                      <span class="text-white font-weight-bold">{{ token.symbol.charAt(0) }}</span>
+                    <v-avatar color="primary" size="32" class="mr-3">
+                      <span class="text-white font-weight-bold">{{ (token.symbol || 'T').charAt(0) }}</span>
                     </v-avatar>
                     <div>
-                      <div class="font-weight-medium">{{ token.name }}</div>
-                      <div class="text-caption text-medium-emphasis">{{ token.symbol }}</div>
+                      <div class="font-weight-medium">{{ token.name || '未命名' }}</div>
+                      <div class="text-caption text-medium-emphasis">{{ token.symbol || 'N/A' }}</div>
                     </div>
                   </div>
                 </td>
                 <td>
-                  <div class="font-weight-medium">{{ token.totalSupply }}</div>
+                  <div class="font-weight-medium">{{ token.totalSupply || '0' }}</div>
                   <div class="text-caption text-medium-emphasis">{{ formatAddress(token.address) }}</div>
                 </td>
                 <td class="text-center">
@@ -142,18 +177,18 @@
               >
                 <td>
                   <div class="d-flex align-center py-2">
-                    <v-avatar :color="token.color" size="32" class="mr-3">
-                      <span class="text-white font-weight-bold">{{ token.symbol.charAt(0) }}</span>
+                    <v-avatar color="secondary" size="32" class="mr-3">
+                      <span class="text-white font-weight-bold">W</span>
                     </v-avatar>
                     <div>
-                      <div class="font-weight-medium">{{ token.name }}</div>
-                      <div class="text-caption text-medium-emphasis">{{ token.symbol }}</div>
+                      <div class="font-weight-medium">{{ token.name || 'Wrapped Token' }}</div>
+                      <div class="text-caption text-medium-emphasis">WBKC</div>
                     </div>
                   </div>
                 </td>
                 <td>
                   <v-chip color="info" variant="outlined" size="small" class="mb-1">
-                    {{ token.baseToken }}
+                    原生资产
                   </v-chip>
                   <div class="text-caption text-medium-emphasis">{{ formatAddress(token.address) }}</div>
                 </td>
@@ -182,16 +217,20 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { TOKENS_DATA } from '@/mock/tokens'
+import { useContractsStore } from '@/store/contracts'
+import contractScanService from '@/services/contractScanService'
 
 const router = useRouter()
+const contractsStore = useContractsStore()
 
 // 响应式数据
 const searchQuery = ref('')
 const filterType = ref('all')
 const showCopySuccess = ref(false)
+const isLoading = ref(false)
+const scanMessage = ref('')
 
 // 格式化地址（显示首尾）
 const formatAddress = (address) => {
@@ -201,7 +240,11 @@ const formatAddress = (address) => {
 
 // 过滤 ERC20 代币
 const filteredErc20 = computed(() => {
-  let tokens = TOKENS_DATA.erc20
+  let tokens = contractsStore.erc20Tokens
+
+  if (filterType.value === 'wrapped') {
+    return []
+  }
 
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
@@ -215,21 +258,90 @@ const filteredErc20 = computed(() => {
   return tokens
 })
 
-// 过滤 Wrapped 代币
+// 过滤 WBKC 代币
 const filteredWrapped = computed(() => {
-  let tokens = TOKENS_DATA.wrapped
+  let tokens = contractsStore.wbkcTokens
+
+  if (filterType.value === 'erc20') {
+    return []
+  }
 
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     tokens = tokens.filter(token =>
       token.name.toLowerCase().includes(query) ||
-      token.symbol.toLowerCase().includes(query) ||
       token.address.toLowerCase().includes(query)
     )
   }
 
   return tokens
 })
+
+// 扫描区块链上的合约
+const scanContracts = async () => {
+  isLoading.value = true
+  scanMessage.value = '正在扫描区块链...'
+  
+  try {
+    const foundContracts = await contractScanService.scanContracts(
+      undefined,
+      undefined,
+      (current, total, found) => {
+        scanMessage.value = `正在扫描: ${current}/${total} 区块，已发现 ${found} 个合约`
+      }
+    )
+    scanMessage.value = `扫描完成！共发现 ${foundContracts.length} 个合约`
+    setTimeout(() => {
+      scanMessage.value = ''
+    }, 3000)
+  } catch (error) {
+    console.error('扫描失败:', error)
+    const errorMsg = error.message || '未知错误'
+    
+    // 如果是连接错误，提示用户重新登录
+    if (errorMsg.includes('未连接') || errorMsg.includes('请重新登录')) {
+      scanMessage.value = `${errorMsg}。请返回登录页重新连接`
+      // 3秒后跳转到登录页
+      setTimeout(() => {
+        router.push('/login')
+      }, 3000)
+    } else {
+      scanMessage.value = `扫描失败: ${errorMsg}`
+      setTimeout(() => {
+        scanMessage.value = ''
+      }, 5000)
+    }
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 快速扫描新区块
+const scanNewBlocks = async () => {
+  if (contractsStore.lastScanBlock === 0) {
+    scanMessage.value = '首次扫描，将扫描所有区块...'
+    return scanContracts()
+  }
+  
+  isLoading.value = true
+  scanMessage.value = '正在扫描新区块...'
+  
+  try {
+    const foundContracts = await contractScanService.scanNewBlocks()
+    scanMessage.value = `扫描完成！新发现 ${foundContracts.length} 个合约`
+    setTimeout(() => {
+      scanMessage.value = ''
+    }, 2000)
+  } catch (error) {
+    console.error('扫描失败:', error)
+    scanMessage.value = `扫描失败: ${error.message || '未知错误'}`
+    setTimeout(() => {
+      scanMessage.value = ''
+    }, 5000)
+  } finally {
+    isLoading.value = false
+  }
+}
 
 // 导航到代币详情页
 const goToDetail = (address) => {
@@ -250,6 +362,32 @@ const copyToClipboard = async (text) => {
     console.error('复制失败:', err)
   }
 }
+
+// 组件挂载时加载数据
+onMounted(async () => {
+  console.log('CoinListView 挂载')
+  console.log('当前合约数量:', contractsStore.contracts.length)
+  console.log('ERC20代币数量:', contractsStore.erc20Tokens.length)
+  console.log('WBKC代币数量:', contractsStore.wbkcTokens.length)
+  console.log('最后扫描区块:', contractsStore.lastScanBlock)
+  
+  // 检查连接状态
+  const connectionService = (await import('@/services/connectionService')).default
+  if (!connectionService.isConnected()) {
+    scanMessage.value = '⚠️ 未连接到区块链节点，请重新登录以使用完整功能'
+    return
+  }
+  
+  // 如果没有缓存的合约数据，提示用户扫描
+  if (contractsStore.contracts.length === 0) {
+    scanMessage.value = '暂无代币数据，请点击"扫描区块链"按钮来发现已部署的代币合约'
+  } else {
+    scanMessage.value = `已加载 ${contractsStore.contracts.length} 个合约（最后扫描到区块 ${contractsStore.lastScanBlock}），可点击"刷新新区块"查找新合约`
+    setTimeout(() => {
+      scanMessage.value = ''
+    }, 5000)
+  }
+})
 </script>
 
 <style scoped>

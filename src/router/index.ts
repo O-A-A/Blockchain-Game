@@ -102,22 +102,28 @@ const router = createRouter({
     ]
 })
 
-// 路由守卫 - 自动使用演示账户@/views/LoginView.vue
+// 路由守卫 - 检查登录状态
 router.beforeEach(async (to, from, next) => {
     const walletStore = useWalletStore()
 
-    // 自动使用演示账户登录
+    // 尝试从localStorage恢复登录状态
     if (!walletStore.isLoggedIn) {
-        walletStore.setAddress(CONFIG.DEMO_ACCOUNT)
-        try {
-            await walletStore.refreshBalances()
-        } catch (error) {
-            console.error('自动登录刷新余额失败:', error)
+        const savedAddress = localStorage.getItem('walletAddress')
+        const savedNodeUrl = localStorage.getItem('nodeUrl')
+        
+        if (savedAddress && savedNodeUrl) {
+            // 有保存的登录信息，设置为已登录状态
+            walletStore.setAddress(savedAddress)
+            walletStore.setLoggedIn(true)
         }
     }
     
-    // 如果目标是登录或注册页，但已经登录了演示账户，则重定向到仪表板
-    if ((to.path === '/login' || to.path === '/register') && walletStore.isLoggedIn) {
+    // 如果访问需要登录的页面但未登录，重定向到登录页
+    if (to.meta.requiresAuth && !walletStore.isLoggedIn) {
+        next('/login')
+    }
+    // 如果已登录但访问登录页，重定向到仪表板
+    else if (to.path === '/login' && walletStore.isLoggedIn) {
         next('/dashboard')
     } else {
         next()
