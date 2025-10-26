@@ -724,6 +724,7 @@ watch([amount, fromCurrency, toCurrency], async () => {
       // 更新输出金额
       outputAmount.value = result;
     } catch (error) {
+      // 计算失败时显示 0
       outputAmount.value = '0';
     }
   } else {
@@ -738,7 +739,7 @@ watch([fromCurrency, toCurrency], async () => {
     const rate = await walletStore.getExchangeRate(fromCurrency.value, toCurrency.value);
     exchangeRate.value = rate;
   } catch (error) {
-    // 设置默认值
+    // 获取汇率失败时设置默认值
     exchangeRate.value = fromCurrency.value === 'wBKC' ? '10.00' : '0.10';
   }
 }, { immediate: true });

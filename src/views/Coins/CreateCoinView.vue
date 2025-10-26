@@ -371,6 +371,7 @@ const copyAddress = async () => {
     await navigator.clipboard.writeText(deployedToken.value.address)
     showCopySuccess.value = true
   } catch (err) {
+    // 复制失败，静默处理
   }
 }
 

@@ -362,13 +362,6 @@ const deployPool = async () => {
 
   try {
     // 开始部署 AMM 流动性池
-    /*console.log('开始部署 AMM 流动性池...', {
-      tokenA: formData.value.tokenA,
-      tokenB: formData.value.tokenB,
-      poolName: formData.value.poolName,
-      imgUrl: formData.value.imgUrl
-    })
-
     const result = await contractDeployService.deployAMM({
       tokenA: formData.value.tokenA,
       tokenB: formData.value.tokenB,
@@ -410,6 +403,7 @@ const copyAddress = async (address: string) => {
     await navigator.clipboard.writeText(address)
     showCopySuccess.value = true
   } catch (err) {
+    // 复制失败，静默处理
   }
 }
 

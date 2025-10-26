@@ -14,27 +14,27 @@
 
     <!-- 池子详情 -->
     <template v-else-if="pool">
-      <!-- 返回按钮 -->
-      <v-btn
-        variant="text"
-        prepend-icon="mdi-arrow-left"
-        class="mb-6"
-        @click="goBack"
-      >
-        返回池列表
-      </v-btn>
+    <!-- 返回按钮 -->
+    <v-btn
+      variant="text"
+      prepend-icon="mdi-arrow-left"
+      class="mb-6"
+      @click="goBack"
+    >
+      返回池列表
+    </v-btn>
 
-      <!-- 池基本信息 -->
-      <v-row class="mb-6">
+    <!-- 池基本信息 -->
+    <v-row class="mb-6">
         <v-col cols="12">
-          <v-card rounded="lg" elevation="2" class="pa-6">
-            <div class="d-flex align-center mb-4">
+        <v-card rounded="lg" elevation="2" class="pa-6">
+          <div class="d-flex align-center mb-4">
               <v-avatar color="primary" size="56" class="mr-3">
                 <span class="text-white text-h5">{{ pool.token0.symbol.charAt(0) }}</span>
-              </v-avatar>
+            </v-avatar>
               <v-avatar color="secondary" size="56" class="mr-4">
                 <span class="text-white text-h5">{{ pool.token1.symbol.charAt(0) }}</span>
-              </v-avatar>
+            </v-avatar>
               <div class="flex-grow-1">
                 <h1 class="text-h4 font-weight-bold">{{ pool.name }}</h1>
                 <div class="text-body-1 text-medium-emphasis">{{ pool.token0.symbol }}/{{ pool.token1.symbol }} 流动性池</div>
@@ -78,25 +78,25 @@
                   <div class="text-caption text-medium-emphasis mt-1">我的 LP Token</div>
                   <div class="text-h6 font-weight-bold">{{ pool.userLpBalance || '0' }}</div>
                   <div class="text-caption">占比: {{ poolSharePercentage }}%</div>
-                </div>
-              </v-col>
+          </div>
+            </v-col>
               <v-col cols="12" sm="6" md="3">
                 <div class="text-center">
                   <v-icon size="small" color="warning">mdi-circle-multiple</v-icon>
                   <div class="text-caption text-medium-emphasis mt-1">总 LP 供应</div>
                   <div class="text-h6 font-weight-bold">{{ pool.totalLpSupply }}</div>
                 </div>
-              </v-col>
-            </v-row>
-          </v-card>
-        </v-col>
-      </v-row>
+            </v-col>
+          </v-row>
+        </v-card>
+      </v-col>
+    </v-row>
 
       <!-- 池子储备和用户余额 -->
-      <v-row class="mb-6">
+    <v-row class="mb-6">
         <!-- Token0 信息 -->
-        <v-col cols="12" md="6">
-          <v-card rounded="lg" elevation="1" class="pa-4">
+      <v-col cols="12" md="6">
+        <v-card rounded="lg" elevation="1" class="pa-4">
             <div class="d-flex align-center mb-3">
               <v-avatar color="primary" size="40" class="mr-3">
                 <span class="text-white font-weight-bold">{{ pool.token0.symbol.charAt(0) }}</span>
@@ -114,16 +114,16 @@
             <div class="d-flex justify-space-between mb-2">
               <span class="text-body-2 text-medium-emphasis">我的余额</span>
               <span class="text-body-1 font-weight-medium">{{ token0Balance }}</span>
-            </div>
+          </div>
             <v-chip size="small" class="mt-2 font-mono" prepend-icon="mdi-link">
               {{ formatAddress(pool.token0.address) }}
             </v-chip>
-          </v-card>
-        </v-col>
+        </v-card>
+      </v-col>
 
         <!-- Token1 信息 -->
-        <v-col cols="12" md="6">
-          <v-card rounded="lg" elevation="1" class="pa-4">
+      <v-col cols="12" md="6">
+        <v-card rounded="lg" elevation="1" class="pa-4">
             <div class="d-flex align-center mb-3">
               <v-avatar color="secondary" size="40" class="mr-3">
                 <span class="text-white font-weight-bold">{{ pool.token1.symbol.charAt(0) }}</span>
@@ -141,13 +141,13 @@
             <div class="d-flex justify-space-between mb-2">
               <span class="text-body-2 text-medium-emphasis">我的余额</span>
               <span class="text-body-1 font-weight-medium">{{ token1Balance }}</span>
-            </div>
+          </div>
             <v-chip size="small" class="mt-2 font-mono" prepend-icon="mdi-link">
               {{ formatAddress(pool.token1.address) }}
             </v-chip>
-          </v-card>
-        </v-col>
-      </v-row>
+        </v-card>
+      </v-col>
+    </v-row>
 
       <!-- 常用操作快捷按钮 -->
       <v-row class="mb-6">
@@ -159,16 +159,16 @@
             </div>
             <v-row>
               <v-col cols="12" sm="6" md="3">
-                <v-btn
-                  color="primary"
+                  <v-btn
+                    color="primary"
                   block
-                  rounded="lg"
+                    rounded="lg"
                   prepend-icon="mdi-swap-horizontal"
                   @click="setFunction('swapAForB')"
-                >
+                  >
                   交换 A→B
-                </v-btn>
-              </v-col>
+                  </v-btn>
+                  </v-col>
               <v-col cols="12" sm="6" md="3">
                 <v-btn
                   color="primary"
@@ -181,26 +181,26 @@
                 </v-btn>
               </v-col>
               <v-col cols="12" sm="6" md="3">
-                <v-btn
-                  color="success"
-                  block
-                  rounded="lg"
+                    <v-btn
+                      color="success"
+                      block
+                      rounded="lg"
                   prepend-icon="mdi-plus"
                   @click="setFunction('addLiquidity')"
-                >
-                  添加流动性
-                </v-btn>
-              </v-col>
+                    >
+                      添加流动性
+                    </v-btn>
+                  </v-col>
               <v-col cols="12" sm="6" md="3">
-                <v-btn
-                  color="error"
-                  block
-                  rounded="lg"
+                    <v-btn
+                      color="error"
+                      block
+                      rounded="lg"
                   prepend-icon="mdi-minus"
                   @click="setFunction('removeLiquidity')"
-                >
-                  移除流动性
-                </v-btn>
+                    >
+                      移除流动性
+                    </v-btn>
               </v-col>
               <v-col cols="12" sm="6" md="3">
                 <v-btn
@@ -247,7 +247,7 @@
                 </v-btn>
               </v-col>
             </v-row>
-          </v-card>
+    </v-card>
         </v-col>
       </v-row>
 
@@ -348,13 +348,55 @@ const loadTokenBalances = async () => {
     token0Balance.value = ethers.formatUnits(balance0, pool.value.token0.decimals)
     token1Balance.value = ethers.formatUnits(balance1, pool.value.token1.decimals)
   } catch (err: any) {
+    // 获取余额失败，静默处理
+    token0Balance.value = '0'
+    token1Balance.value = '0'
   }
 }
 
 // 设置函数（快捷按钮）
-const setFunction = (functionName: string) => {
+const setFunction = (functionName: string, prefillParams?: string[]) => {
   if (functionCallerRef.value && functionCallerRef.value.setSelectedFunction) {
-    functionCallerRef.value.setSelectedFunction(functionName)
+    // 如果没有提供预填充参数，根据函数名智能预填充
+    let params = prefillParams
+    if (!params) {
+      switch (functionName) {
+        case 'userLpToken':
+          // 查询用户LP代币余额：预填充当前用户地址
+          params = [userAddress.value]
+          break
+        case 'addLiquidity':
+          // 添加流动性：参数 (amountA, amountB, to)，预填充 to 为用户地址
+          params = ['', '', userAddress.value]
+          break
+        case 'removeLiquidity':
+          // 移除流动性：参数 (lpAmount, to)，预填充 to 为用户地址
+          params = ['', userAddress.value]
+          break
+        case 'swapAForB':
+          // 交换 A 换 B：参数 (amountAIn, to)，预填充 to 为用户地址
+          params = ['', userAddress.value]
+          break
+        case 'swapBForA':
+          // 交换 B 换 A：参数 (amountBIn, to)，预填充 to 为用户地址
+          params = ['', userAddress.value]
+          break
+        case 'flashSwapTokenA':
+        case 'flashSwapTokenB':
+          // 闪电交换：参数留空让用户填写
+          params = []
+          break
+        case 'getAmountAOut':
+        case 'getAmountBOut':
+          // 计算输出：参数为输入数量
+          params = ['']
+          break
+        default:
+          params = []
+      }
+    }
+    
+    functionCallerRef.value.setSelectedFunction(functionName, params)
     
     // 滚动到函数调用器
     setTimeout(() => {

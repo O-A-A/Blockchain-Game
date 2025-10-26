@@ -178,10 +178,17 @@ const onFunctionChange = () => {
   }
 }
 
-// 暴露方法给父组件
-const setSelectedFunction = (functionName: string) => {
+// 暴露方法给父组件（支持预填充参数）
+const setSelectedFunction = (functionName: string, prefillParams?: string[]) => {
   selectedFunction.value = functionName
   onFunctionChange()
+  
+  // 如果提供了预填充参数，设置它们
+  if (prefillParams && prefillParams.length > 0) {
+    setTimeout(() => {
+      functionParams.value = [...prefillParams]
+    }, 50)
+  }
 }
 
 // 暴露给父组件

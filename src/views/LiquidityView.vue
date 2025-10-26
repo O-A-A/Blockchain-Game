@@ -494,6 +494,7 @@
       
       return amountAValid && amountBValid;
     } catch (error) {
+      // 验证失败时返回 false
       return false;
     }
   });
@@ -519,9 +520,9 @@
       }
       
       isLoading.value = false;
-    } catch (error) {
+    } catch (error: any) {
       isLoading.value = false;
-      errorMessage.value = '加载数据失败';
+      errorMessage.value = error?.message || '加载数据失败';
     }
   });
   
