@@ -349,13 +349,54 @@ const loadUserBalance = async () => {
     const balance = await contractInteractionService.getERC20Balance(tokenAddress, userAddress.value)
     userBalance.value = formatBalance(balance)
   } catch (err: any) {
+    // 静默失败，余额显示为 0
+    userBalance.value = '0'
   }
 }
 
 // 设置函数（快捷按钮）
-const setFunction = (functionName: string) => {
+const setFunction = (functionName: string, prefillParams?: string[]) => {
   if (functionCallerRef.value && functionCallerRef.value.setSelectedFunction) {
-    functionCallerRef.value.setSelectedFunction(functionName)
+    // 如果没有提供预填充参数，根据函数名智能预填充
+    let params = prefillParams
+    if (!params) {
+      switch (functionName) {
+        case 'balanceOf':
+          // 查询余额：预填充当前用户地址
+          params = [userAddress.value]
+          break
+        case 'transfer':
+          // 转账：第一个参数为目标地址（留空让用户填），第二个参数为金额（留空）
+          params = []
+          break
+        case 'approve':
+          // 授权：第一个参数为被授权地址（留空），第二个参数为授权额度（留空）
+          params = []
+          break
+        case 'allowance':
+          // 查询授权额度：预填充用户地址作为 owner，spender 留空
+          params = [userAddress.value, '']
+          break
+        case 'mintToken':
+          // 铸造代币：根据类型预填充
+          if (isWBKC.value) {
+            // WBKC 不需要参数（通过 payable 传 ETH）
+            params = []
+    } else {
+            // ERC20：预填充接收地址为当前用户，数量留空
+            params = [userAddress.value, '']
+          }
+          break
+        case 'burnToken':
+          // 销毁代币：预填充数量为空
+          params = ['']
+          break
+        default:
+          params = []
+      }
+    }
+    
+    functionCallerRef.value.setSelectedFunction(functionName, params)
     
     // 滚动到函数调用器
     setTimeout(() => {
@@ -404,6 +445,7 @@ const copyToClipboard = async (text: string) => {
     await navigator.clipboard.writeText(text)
     showCopySuccess.value = true
   } catch (err) {
+    // 复制失败，不显示任何提示
   }
 }
 
