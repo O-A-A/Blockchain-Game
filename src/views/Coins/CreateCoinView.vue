@@ -100,7 +100,7 @@
             <v-form @submit.prevent="deployToken" ref="form">
               <v-row>
                 <!-- 代币名称 -->
-                <v-col cols="12" md="6">
+                <v-col cols="12">
                   <v-text-field
                     v-model="formData.name"
                     label="代币名称"
@@ -108,50 +108,34 @@
                     prepend-inner-icon="mdi-alphabetical"
                     variant="outlined"
                     density="comfortable"
-                    :rules="[v => !!v || '代币名称不能为空', v => v.length <= 50 || '名称不能超过50个字符']"
+                    :rules="[v => !!v || '代币名称不能为空', v => v.length <= 31 || '名称不能超过31个字符']"
                     rounded="lg"
+                    hint="智能合约将存储此名称，最长31字符"
+                    persistent-hint
                   ></v-text-field>
                 </v-col>
 
-                <!-- 代币符号 -->
-                <v-col cols="12" md="6">
+                <!-- 图片URL -->
+                <v-col cols="12">
                   <v-text-field
-                    v-model="formData.symbol"
-                    label="代币符号"
-                    placeholder="例如: MTK"
-                    prepend-inner-icon="mdi-account-convert"
+                    v-model="formData.imgUrl"
+                    label="图片URL"
+                    placeholder="例如: https://example.com/token.png"
+                    prepend-inner-icon="mdi-image"
                     variant="outlined"
                     density="comfortable"
-                    maxlength="10"
-                    counter="10"
-                    :rules="[v => !!v || '代币符号不能为空', v => v.length <= 10 || '符号不能超过10个字符']"
                     rounded="lg"
-                  ></v-text-field>
-                </v-col>
-
-                <!-- 小数位数 -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model.number="formData.decimals"
-                    label="小数位数"
-                    type="number"
-                    min="0"
-                    max="18"
-                    prepend-inner-icon="mdi-numeric"
-                    variant="outlined"
-                    density="comfortable"
-                    :rules="[
-                      v => v !== null && v !== '' || '小数位数不能为空',
-                      v => v >= 0 && v <= 18 || '小数位数必须在 0-18 之间'
-                    ]"
-                    rounded="lg"
+                    :rules="[v => !!v || '图片URL不能为空', v => v.length <= 31 || 'URL不能超过31个字符']"
+                    required
+                    hint="代币图标的URL地址，最长31字符（必填）"
+                    persistent-hint
                   ></v-text-field>
                 </v-col>
 
                 <!-- 初始供应量 (仅 ERC20 显示) -->
-                <v-col v-if="tokenType === 'erc20'" cols="12" md="6">
+                <v-col v-if="tokenType === 'erc20'" cols="12">
                   <v-text-field
-                    v-model.number="formData.initialSupply"
+                    v-model="formData.initialSupply"
                     label="初始供应量"
                     type="number"
                     min="0"
@@ -160,9 +144,11 @@
                     density="comfortable"
                     :rules="[
                       v => v !== null && v !== '' || '初始供应量不能为空',
-                      v => v >= 0 || '初始供应量不能为负数'
+                      v => Number(v) >= 0 || '初始供应量不能为负数'
                     ]"
                     rounded="lg"
+                    hint="代币的初始发行量（单位：个，将自动转换为最小单位）"
+                    persistent-hint
                   ></v-text-field>
                 </v-col>
 
@@ -172,7 +158,18 @@
                     <v-icon class="mr-2">mdi-information</v-icon>
                     <div>
                       <div class="font-weight-medium">Wrapped 代币信息</div>
-                      <div class="text-caption">初始供应量将固定为 0，用户可通过转账来铸造对应的 Wrapped 代币</div>
+                      <div class="text-caption">初始供应量固定为 0，用户可通过转账原生币来铸造对应的 Wrapped 代币。小数位数固定为 18 位。</div>
+                    </div>
+                  </v-alert>
+                </v-col>
+
+                <!-- 通用说明 -->
+                <v-col cols="12">
+                  <v-alert color="warning" variant="tonal" rounded="lg" class="mb-0">
+                    <v-icon class="mr-2">mdi-alert</v-icon>
+                    <div>
+                      <div class="font-weight-medium">注意事项</div>
+                      <div class="text-caption">• 代币小数位数固定为 18 位<br>• 代币符号将根据名称自动生成<br>• 部署后无法修改</div>
                     </div>
                   </v-alert>
                 </v-col>
@@ -225,7 +222,12 @@
         <v-card-text class="pa-6">
           <div class="mb-4">
             <div class="text-caption text-medium-emphasis mb-1">代币名称</div>
-            <div class="text-body-2 font-weight-medium">{{ deployedToken.name }} ({{ deployedToken.symbol }})</div>
+            <div class="text-body-2 font-weight-medium">{{ deployedToken.name }}</div>
+          </div>
+          
+          <div class="mb-4" v-if="deployedToken.symbol">
+            <div class="text-caption text-medium-emphasis mb-1">代币符号</div>
+            <div class="text-body-2 font-weight-medium">{{ deployedToken.symbol }}</div>
           </div>
 
           <div class="mb-4">
@@ -275,8 +277,11 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import contractDeployService from '@/services/contractDeployService'
+import { useContractsStore } from '@/store/contracts'
 
 const router = useRouter()
+const contractsStore = useContractsStore()
 
 const tokenType = ref('erc20')
 const form = ref(null)
@@ -286,26 +291,18 @@ const showCopySuccess = ref(false)
 
 const formData = ref({
   name: '',
-  symbol: '',
-  decimals: 18,
-  initialSupply: 1000000
+  imgUrl: '',
+  initialSupply: '1000000'
 })
 
 const deployedToken = ref({
   name: '',
   symbol: '',
-  address: ''
+  address: '',
+  type: '',
+  decimals: 18,
+  initialSupply: '0'
 })
-
-// 生成模拟合约地址
-const generateMockAddress = () => {
-  const chars = '0123456789abcdef'
-  let address = '0x'
-  for (let i = 0; i < 40; i++) {
-    address += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return address
-}
 
 // 部署代币
 const deployToken = async () => {
@@ -315,20 +312,62 @@ const deployToken = async () => {
   isLoading.value = true
 
   try {
-    // 模拟延迟
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    let result
 
-    // 生成模拟结果
+    if (tokenType.value === 'erc20') {
+      // 部署 ERC20 代币
+      console.log('正在部署 ERC20 代币...', {
+        name: formData.value.name,
+        totalSupply: formData.value.initialSupply,
+        imgUrl: formData.value.imgUrl
+      })
+
+      result = await contractDeployService.deployERC20({
+        name: formData.value.name,
+        totalSupply: formData.value.initialSupply,
+        imgUrl: formData.value.imgUrl || ''
+      })
+    } else {
+      // 部署 WBKC 代币
+      console.log('正在部署 WBKC 代币...', {
+        name: formData.value.name,
+        imgUrl: formData.value.imgUrl
+      })
+
+      result = await contractDeployService.deployWBKC({
+        name: formData.value.name,
+        imgUrl: formData.value.imgUrl || ''
+      })
+    }
+
+    // 检查部署是否成功
+    if (!result.success) {
+      throw new Error(result.error || '部署失败')
+    }
+
+    if (!result.contractAddress || !result.contractInfo) {
+      throw new Error('部署结果不完整')
+    }
+
+    console.log('代币部署成功:', result.contractAddress, result.contractInfo)
+
+    // 不需要再次添加到store，因为 deployService 已经添加了
+    // contractsStore.addContract(result.contractInfo)
+
+    // 设置部署结果
     deployedToken.value = {
-      name: formData.value.name,
-      symbol: formData.value.symbol,
-      address: generateMockAddress(),
+      name: result.contractInfo.name || formData.value.name,
+      symbol: result.contractInfo.symbol || 'TOKEN',
+      address: result.contractAddress,
       type: tokenType.value,
-      decimals: formData.value.decimals,
-      initialSupply: tokenType.value === 'erc20' ? formData.value.initialSupply : 0
+      decimals: 18,
+      initialSupply: tokenType.value === 'erc20' ? formData.value.initialSupply : '0'
     }
 
     showSuccessDialog.value = true
+  } catch (error) {
+    console.error('部署代币失败:', error)
+    alert(`部署失败: ${error.message || '未知错误'}`)
   } finally {
     isLoading.value = false
   }

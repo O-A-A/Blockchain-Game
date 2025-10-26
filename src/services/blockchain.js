@@ -1,6 +1,8 @@
 // blockchain.js - 与区块链和智能合约交互的服务
 import CONFIG from '@/config.js';
 import blockchainMock from './blockchainMock.js';
+import connectionService from './connectionService';
+import { ethers } from 'ethers';
 
 // 根据配置选择是使用Mock还是真实实现
 
@@ -11,20 +13,17 @@ function toWei(ether) {
     if (typeof ether === 'number') {
         ether = ether.toString();
     }
-    // 18 decimals
-    const wei = BigInt(Math.floor(parseFloat(ether) * 10**18));
-    return '0x' + wei.toString(16);
+    // 使用ethers.js的parseEther
+    return ethers.parseEther(ether).toString();
 }
 
-function fromWei(hexWei) {
-    // Convert wei (hex or number) to ether
-    let wei;
-    if (hexWei.startsWith('0x')) {
-        wei = BigInt(hexWei);
-    } else {
-        wei = BigInt(hexWei);
+function fromWei(weiValue) {
+    // Convert wei to ether
+    // 使用ethers.js的formatEther
+    if (typeof weiValue === 'string' || typeof weiValue === 'bigint') {
+        return ethers.formatEther(weiValue);
     }
-    return (Number(wei) / 10**18).toString();
+    return '0';
 }
 
 // Keccak-256 hash function for creating function selectors
@@ -151,86 +150,112 @@ const blockchainService = {
     toWei,
     fromWei,
     
-    // Get token balances
-    async getWbkcBalance(address = CONFIG.DEMO_ACCOUNT) {
+    // 通用的代币余额查询方法（支持任何 ERC20/WBKC 合约）
+    async getTokenBalance(userAddress, contractAddress) {
         try {
-            // Note: We'd use balanceOf from ERC20 contract, but as an example
-            // we'll just return a placeholder value for now
-            return '100000000000000000000'; // 硬编码 100 WBKC
+            if (!connectionService.isConnected()) {
+                console.warn('未连接到区块链节点');
+                return '0';
+            }
+            
+            // 检查合约地址是否有效
+            if (!contractAddress || contractAddress === '0x0' || contractAddress === '0x0000000000000000000000000000000000000000') {
+                console.warn('合约地址无效');
+                return '0';
+            }
+            
+            // 使用 ERC20 标准的 balanceOf ABI
+            const erc20BalanceAbi = [
+                {
+                    "inputs": [{"internalType": "address", "name": "account", "type": "address"}],
+                    "name": "balanceOf",
+                    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                    "stateMutability": "view",
+                    "type": "function"
+                }
+            ];
+            
+            const balance = await connectionService.callContract(
+                contractAddress,
+                erc20BalanceAbi,
+                'balanceOf',
+                userAddress
+            );
+            
+            return balance.toString();
         } catch (error) {
+            // 如果是 BAD_DATA 错误，说明合约不存在，静默处理
+            if (error.code === 'BAD_DATA' || error.message.includes('could not decode')) {
+                console.warn(`合约 ${contractAddress} 不存在或地址无效`);
+                return '0';
+            }
+            console.error(`获取代币余额失败 (${contractAddress}):`, error);
             return '0';
         }
     },
     
-    async getE20cBalance(address = CONFIG.DEMO_ACCOUNT) {
-        try {
-            // Similar to WBKC balance
-            return '50000000000000000000'; // 硬编码 50 E20C
-        } catch (error) {
-            return '0';
-        }
+    // 保留旧方法用于向后兼容，但现在它们调用通用方法
+    async getWbkcBalance(address) {
+        // 已废弃：应该使用 getTokenBalance(address, contractAddress)
+        console.warn('getWbkcBalance 已废弃，请使用 getTokenBalance');
+        return '0';
+    },
+    
+    async getE20cBalance(address) {
+        // 已废弃：应该使用 getTokenBalance(address, contractAddress)
+        console.warn('getE20cBalance 已废弃，请使用 getTokenBalance');
+        return '0';
     },
     
     // AMM Contract interaction methods
     async swapAforB(amountInWei) {
         try {
-            // 使用与test.html完全相同的参数和格式
-            const functionSelector = '0x73d0335f';
-            const paramValue = 10; // 固定使用10，与test.html相同
-            const encodedParam = paramValue.toString(16).padStart(64, '0');
-            const data = functionSelector + encodedParam;
+            if (!connectionService.isConnected()) {
+                throw new Error('未连接到区块链节点');
+            }
             
-            // 使用test.html中的固定gas值
-            const transaction = {
-                from: CONFIG.DEMO_ACCOUNT,
-                to: CONFIG.CONTRACTS.AMM,
-                data: data,
-                gas: '0x186a0',
-                gasPrice: '0x3b9aca00',
-                nonce: '0x0', // 暂时固定为0进行测试
-                value: '0x0'
-            };
+            const ammAbi = (await import('@/abis/amm.json')).default;
             
-            const txHash = await sendTransaction(transaction);
-            return txHash;
+            // E20C -> wBKC (swapAForB)
+            const tx = await connectionService.sendContractTransaction(
+                CONFIG.CONTRACTS.AMM,
+                ammAbi,
+                'swapAForB',
+                amountInWei
+            );
+            
+            // 等待交易确认
+            await tx.wait();
+            
+            return tx.hash;
         } catch (error) {
+            console.error('swapAforB失败:', error);
             throw error;
         }
     },
     
     async swapBforA(amountInWei) {
         try {
-            // Get function selector
-            const functionSelector = '0x73d0335f';
+            if (!connectionService.isConnected()) {
+                throw new Error('未连接到区块链节点');
+            }
             
-            // Encode parameter (amount)
-            const amount = typeof amountInWei === 'string' && amountInWei.startsWith('0x') ? 
-            BigInt(amountInWei).toString(10) : 
-            Math.floor(parseFloat(amountInWei));
-             
+            const ammAbi = (await import('@/abis/amm.json')).default;
             
-            const encodedParam = amount.toString(16).padStart(64, '0');
-            const data = functionSelector + encodedParam;
+            // wBKC -> E20C (swapBForA)
+            const tx = await connectionService.sendContractTransaction(
+                CONFIG.CONTRACTS.AMM,
+                ammAbi,
+                'swapBForA',
+                amountInWei
+            );
             
-            // Get nonce for the transaction
-            const nonce = await getNonce(CONFIG.DEMO_ACCOUNT);
+            // 等待交易确认
+            await tx.wait();
             
-            // Prepare transaction
-            const transaction = {
-                from: CONFIG.DEMO_ACCOUNT,
-                to: CONFIG.CONTRACTS.AMM,
-                data: data,
-                gas: '0x186a0', // 100000 gas
-                gasPrice: '0x3b9aca00', // 1 gwei
-                nonce: '0x' + nonce.toString(16),
-                value: '0x0'
-            };
-            
-            // Send transaction
-            const txHash = await sendTransaction(transaction);
-            
-            return txHash;
+            return tx.hash;
         } catch (error) {
+            console.error('swapBforA失败:', error);
             throw error;
         }
     },
@@ -238,83 +263,89 @@ const blockchainService = {
     // Read-only methods
     async getAmountBOut(amountInWei) {
         try {
-            const result = await callContractMethod(
+            if (!connectionService.isConnected()) {
+                throw new Error('未连接到区块链节点');
+            }
+            
+            const ammAbi = (await import('@/abis/amm.json')).default;
+            const result = await connectionService.callContract(
                 CONFIG.CONTRACTS.AMM,
-                'getAmountBOut(uint256)',
-                [amountInWei]
+                ammAbi,
+                'getAmountBOut',
+                amountInWei
             );
-            return result;
+            
+            return result.toString();
         } catch (error) {
+            console.error('getAmountBOut失败:', error);
             return '0';
         }
     },
     
     async getAmountAOut(amountInWei) {
         try {
-            const result = await callContractMethod(
+            if (!connectionService.isConnected()) {
+                throw new Error('未连接到区块链节点');
+            }
+            
+            const ammAbi = (await import('@/abis/amm.json')).default;
+            const result = await connectionService.callContract(
                 CONFIG.CONTRACTS.AMM,
-                'getAmountAOut(uint256)',
-                [amountInWei]
+                ammAbi,
+                'getAmountAOut',
+                amountInWei
             );
-            return result;
+            
+            return result.toString();
         } catch (error) {
+            console.error('getAmountAOut失败:', error);
             return '0';
         }
     },
     
     async getExchangeRate() {
         try {
-            const result = await callContractMethod(
-                CONFIG.CONTRACTS.AMM,
-                'getExchangeRate()',
-                []
-            );
-            
-            // Parse result (two uint256 values)
-            if (result && result.length >= 130) {
-                const rateAToB = result.slice(2, 66);  // first 32 bytes after '0x'
-                const rateBToA = result.slice(66, 130); // second 32 bytes
-                
-                return {
-                    rateAToB: '0x' + rateAToB,
-                    rateBToA: '0x' + rateBToA
-                };
+            if (!connectionService.isConnected()) {
+                throw new Error('未连接到区块链节点');
             }
             
-            return { rateAToB: '0', rateBToA: '0' };
+            const ammAbi = (await import('@/abis/amm.json')).default;
+            const result = await connectionService.callContract(
+                CONFIG.CONTRACTS.AMM,
+                ammAbi,
+                'getExchangeRate'
+            );
+            
+            // result应该是包含两个值的数组或对象
+            return {
+                rateAToB: result[0]?.toString() || '0',
+                rateBToA: result[1]?.toString() || '0'
+            };
         } catch (error) {
+            console.error('getExchangeRate失败:', error);
             return { rateAToB: '0', rateBToA: '0' };
         }
     },
     
     async getPoolInfo() {
         try {
-            const result = await callContractMethod(
-                CONFIG.CONTRACTS.AMM,
-                'getPoolInfo()',
-                []
-            );
-            
-            // Parse result (four uint256 values)
-            if (result && result.length >= 258) {
-                const tokenABalance = result.slice(2, 66);     // first 32 bytes
-                const tokenBBalance = result.slice(66, 130);   // second 32 bytes
-                const totalLPSupply = result.slice(130, 194);  // third 32 bytes
-                const k = result.slice(194, 258);              // fourth 32 bytes
-                
-                return {
-                    tokenABalance: '0x' + tokenABalance,
-                    tokenBBalance: '0x' + tokenBBalance,
-                    totalLPSupply: '0x' + totalLPSupply,
-                    k: '0x' + k
-                };
+            if (!connectionService.isConnected()) {
+                throw new Error('未连接到区块链节点');
             }
             
+            const ammAbi = (await import('@/abis/amm.json')).default;
+            const result = await connectionService.callContract(
+                CONFIG.CONTRACTS.AMM,
+                ammAbi,
+                'getPoolInfo'
+            );
+            
+            // result应该是包含四个值的数组或对象
             return {
-                tokenABalance: '0',
-                tokenBBalance: '0',
-                totalLPSupply: '0',
-                k: '0'
+                tokenABalance: result[0]?.toString() || '0',
+                tokenBBalance: result[1]?.toString() || '0',
+                totalLPSupply: result[2]?.toString() || '0',
+                k: result[3]?.toString() || '0'
             };
         } catch (error) {
             console.error('获取池信息失败:', error);

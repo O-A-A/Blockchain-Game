@@ -89,11 +89,25 @@ export const useWalletStore = defineStore('wallet', () => {
         error.value = null;
 
         try {
-            // 调用blockchain.js获取真实余额
-            const [wbkcResult, e20cResult] = await Promise.all([
-                blockchainService.getWbkcBalance(address.value),
-                blockchainService.getE20cBalance(address.value)
-            ]);
+            // 从 contractsStore 获取已部署的合约
+            const { useContractsStore } = await import('@/store/contracts');
+            const contractsStore = useContractsStore();
+            
+            // 获取第一个 WBKC 和 ERC20 合约（如果有的话）
+            const wbkcToken = contractsStore.wbkcTokens[0];
+            const erc20Token = contractsStore.erc20Tokens[0];
+            
+            // 只查询已部署的合约余额
+            let wbkcResult = '0';
+            let e20cResult = '0';
+            
+            if (wbkcToken) {
+                wbkcResult = await blockchainService.getTokenBalance(address.value, wbkcToken.address);
+            }
+            
+            if (erc20Token) {
+                e20cResult = await blockchainService.getTokenBalance(address.value, erc20Token.address);
+            }
 
             // 直接使用原始余额值，不进行任何转换
             wbkcBalance.value = wbkcResult;
@@ -220,26 +234,9 @@ export const useWalletStore = defineStore('wallet', () => {
                 return { success: false, error: error.value };
             }
 
-            // 转换为wei - 在Mock模式下使用原始数字
-            let amountForSwap: string;
-            try {
-                // 检查是否为Mock模式，通过检查CONFIG来判断
-                const CONFIG = await import('@/config.js').then(m => m.CONFIG || m.default);
-                if (CONFIG.USE_MOCK_DATA) {
-                    // Mock模式：直接使用数字
-                    amountForSwap = amount;
-                } else {
-                    // 真实模式：转换为wei
-                    amountForSwap = blockchainService.toWei(amount);
-                }
-            } catch {
-                // 如果无法获取配置，尝试toWei，失败则使用原数字
-                try {
-                    amountForSwap = blockchainService.toWei(amount);
-                } catch {
-                    amountForSwap = amount;
-                }
-            }
+            // 直接使用原始数字（不转换为wei）
+            // 注意：合约接受的是原始整数值，不需要进行单位转换
+            const amountForSwap: string = amount;
             
             // 调用合适的兑换方法
             let txHash: string;
@@ -308,12 +305,10 @@ export const useWalletStore = defineStore('wallet', () => {
     const addTransaction = (tx: any) => {
         tx.id = `tx-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         transactions.value.unshift(tx);
+        // 保存到localStorage
+        saveTransactionsToStorage();
     }
 
-    // 添加示例交易记录（仅用于测试）
-    const addDemoTransactions = (txs: Array<any>) => {
-        transactions.value = [...txs, ...transactions.value];
-    }
 
     // 初始化钱包
     const init = async () => {
@@ -321,22 +316,62 @@ export const useWalletStore = defineStore('wallet', () => {
         if (storedAddress) {
             address.value = storedAddress;
             isLoggedIn.value = true;
+            
+            // 恢复交易记录
+            loadTransactionsFromStorage();
+            
+            // 刷新余额（需要先连接到区块链）
             await refreshBalances();
         } else {
             address.value = null;
             isLoggedIn.value = false;
         }
     }
+    
+    // 从localStorage加载交易记录
+    const loadTransactionsFromStorage = () => {
+        try {
+            const savedTxs = localStorage.getItem(`transactions_${address.value}`);
+            if (savedTxs) {
+                transactions.value = JSON.parse(savedTxs);
+            }
+        } catch (error) {
+            console.error('加载交易记录失败:', error);
+        }
+    }
+    
+    // 保存交易记录到localStorage
+    const saveTransactionsToStorage = () => {
+        try {
+            if (address.value) {
+                localStorage.setItem(`transactions_${address.value}`, JSON.stringify(transactions.value));
+            }
+        } catch (error) {
+            console.error('保存交易记录失败:', error);
+        }
+    }
 
     // 重置钱包状态
     const resetWalletState = () => {
+        // 清除当前地址的交易记录
+        if (address.value) {
+            localStorage.removeItem(`transactions_${address.value}`);
+        }
+        
         setAddress(null);
         isLoggedIn.value = false;
         wbkcBalance.value = '0';
         e20cBalance.value = '0';
         isLoading.value = false;
         error.value = null;
+        transactions.value = [];
+        
+        // 清除所有会话和持久化数据
+        sessionStorage.clear();
         localStorage.removeItem('walletPassword');
+        localStorage.removeItem('nodeUrl');
+        localStorage.removeItem('encryptedPrivateKey');
+        localStorage.removeItem('walletAddress');
     }
 
     return {
@@ -357,7 +392,6 @@ export const useWalletStore = defineStore('wallet', () => {
         init,
         setAddress,
         setLoggedIn,
-        resetWalletState,
-        addDemoTransactions
+        resetWalletState
     }
 })
