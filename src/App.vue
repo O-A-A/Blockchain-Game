@@ -122,17 +122,9 @@ onMounted(async () => {
               <v-icon size="small" class="mr-1">mdi-water</v-icon>
               流动性池
             </v-tab>
-            <!-- <v-tab to="/swap" class="text-body-2">
-              <v-icon size="small" class="mr-1">mdi-swap-horizontal</v-icon>
-              兑换
-            </v-tab>
-            <v-tab to="/liquidity" class="text-body-2">
-              <v-icon size="small" class="mr-1">mdi-water</v-icon>
-              流动性
-            </v-tab> -->
             <v-tab to="/send" class="text-body-2">
               <v-icon size="small" class="mr-1">mdi-send</v-icon>
-              发送
+              转账
             </v-tab>
             <v-tab to="/receive" class="text-body-2">
               <v-icon size="small" class="mr-1">mdi-qrcode</v-icon>

@@ -9,7 +9,6 @@ class ConnectionService {
     private provider: ethers.JsonRpcProvider | null = null
     private wallet: ethers.Wallet | null = null
     private nodeUrl: string = ''
-    private privateKey: string = ''
 
     /**
      * 连接到节点
@@ -29,7 +28,6 @@ class ConnectionService {
             
             // 保存连接信息
             this.nodeUrl = nodeUrl
-            this.privateKey = privateKey
             
             console.log('成功连接到节点:', nodeUrl)
             console.log('钱包地址:', this.wallet.address)
@@ -47,7 +45,6 @@ class ConnectionService {
         this.provider = null
         this.wallet = null
         this.nodeUrl = ''
-        this.privateKey = ''
         
         // 清除会话存储
         sessionStorage.removeItem('currentNodeUrl')

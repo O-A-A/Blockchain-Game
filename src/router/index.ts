@@ -25,11 +25,6 @@ const router = createRouter({
             component: () => import('@/views/SendView.vue')
         },
         {
-            path: '/swap',
-            name: 'Swap',
-            component: () => import('@/views/SwapView.vue')
-        },
-        {
             path: '/login',
             name: 'Login',
             component: () => import('@/views/LoginView.vue')
@@ -91,12 +86,6 @@ const router = createRouter({
             path: '/history',
             name: 'History',
             component: () => import('@/views/HistoryView.vue'),
-            meta: { requiresAuth: true }
-        },
-        {
-            path: '/liquidity',
-            name: 'Liquidity',
-            component: () => import('@/views/LiquidityView.vue'),
             meta: { requiresAuth: true }
         }
     ]

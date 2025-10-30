@@ -51,15 +51,6 @@
                 <v-list-item-title class="font-weight-medium">接收</v-list-item-title>
               </v-list-item>
 
-              <v-list-item to="/swap" rounded="lg" class="mb-2" color="primary">
-                <template v-slot:prepend>
-                  <v-avatar color="primary" variant="tonal" size="36">
-                    <v-icon>mdi-swap-horizontal</v-icon>
-                  </v-avatar>
-                </template>
-                <v-list-item-title class="font-weight-medium">兑换</v-list-item-title>
-              </v-list-item>
-
               <v-list-item to="/history" rounded="lg" color="primary">
                 <template v-slot:prepend>
                   <v-avatar color="primary" variant="tonal" size="36">
