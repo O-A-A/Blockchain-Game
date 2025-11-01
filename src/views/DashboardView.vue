@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <v-container class="py-4">
     <v-row>
       <!-- 左侧资产信息区域 -->
       <v-col cols="12" md="4" lg="3">
@@ -8,19 +8,14 @@
           <v-card-text class="pa-4">
             <div class="text-overline text-medium-emphasis mb-1">总资产价值 (USD)</div>
             <div class="d-flex align-center">
-              <h1 class="text-h5 font-weight-bold">${{ walletStore.usdValue }}</h1>
-              <!-- 注释原因：合约不提供24h涨跌数据 -->
-              <!-- <v-chip color="success" variant="elevated" size="small" class="ml-3">
-                <v-icon start size="x-small">mdi-trending-up</v-icon>
-                <span class="text-caption">+2.4%</span>
-              </v-chip> -->
+              <h1 class="text-h5 font-weight-bold">${{ totalUsdValue }}</h1>
             </div>
 
             <!-- 刷新按钮和最后更新时间 -->
             <div class="d-flex align-center text-body-2 text-medium-emphasis mt-2">
               <span class="text-caption">最后更新: {{ lastUpdated }}</span>
               <v-btn icon size="small" variant="text" class="ml-2" @click="refreshBalances"
-                :loading="walletStore.isLoading">
+                :loading="loading">
                 <v-icon size="small">mdi-refresh</v-icon>
               </v-btn>
             </div>
@@ -62,518 +57,286 @@
             </v-list>
           </v-card-text>
         </v-card>
-
-        <!-- 行情走势卡片 -->
-        <!-- 注释原因：合约只提供GetTwapPrice()当前价格，没有历史价格数据接口 -->
-        <!-- <v-card class="mb-6 rounded-lg" elevation="1">
-          <v-card-text class="pa-4">
-            <div class="d-flex align-center mb-4">
-              <div class="text-subtitle-1 font-weight-bold">价格走势</div>
-              <v-spacer></v-spacer>
-              <v-chip-group v-model="selectedTimeframe" mandatory>
-                <v-chip size="small" value="day">日</v-chip>
-                <v-chip size="small" value="week">周</v-chip>
-                <v-chip size="small" value="month">月</v-chip>
-              </v-chip-group>
-            </div>
-            
-            <div class="price-chart-container">
-              <Line :data="currentChartData" :options="chartOptions" />
-            </div>
-          </v-card-text>
-        </v-card> -->
       </v-col>
 
       <!-- 右侧主内容区域 -->
       <v-col cols="12" md="8" lg="9">
-        <!-- 资产列表卡片 -->
+        <!-- 代币资产列表 -->
         <v-card class="mb-6 rounded-lg" elevation="1">
           <v-toolbar density="compact" flat color="background">
-            <v-toolbar-title class="font-weight-bold">我的资产</v-toolbar-title>
+            <v-toolbar-title class="font-weight-bold">代币资产</v-toolbar-title>
             <v-spacer></v-spacer>
-            <v-btn-toggle v-model="viewMode" mandatory rounded="xl" density="compact">
-              <v-btn value="list" size="small">
-                <v-icon size="small">mdi-format-list-bulleted</v-icon>
-              </v-btn>
-              <v-btn value="card" size="small">
-                <v-icon size="small">mdi-view-grid</v-icon>
-              </v-btn>
-            </v-btn-toggle>
+            <v-chip size="small" color="primary" variant="tonal">
+              {{ tokenBalances.length }} 个代币
+            </v-chip>
           </v-toolbar>
 
           <v-divider></v-divider>
 
-          <v-list v-if="viewMode === 'list'" class="py-0">
-            <!-- wBKC 币 -->
-            <v-list-item class="py-3">
+          <div v-if="loading && tokenBalances.length === 0" class="pa-8 text-center">
+            <v-progress-circular indeterminate color="primary" size="48" class="mb-4"></v-progress-circular>
+            <p class="text-body-2 text-medium-emphasis">正在加载代币余额...</p>
+          </div>
+
+          <v-list v-else-if="tokenBalances.length > 0" class="py-0">
+            <v-list-item
+              v-for="token in tokenBalances"
+              :key="token.address"
+              class="py-3"
+              @click="goToTokenDetail(token.address)"
+              style="cursor: pointer"
+            >
               <template v-slot:prepend>
-                <v-avatar color="primary" variant="flat" size="40">
-                  <span class="text-subtitle-2 font-weight-bold text-white">wBKC</span>
+                <v-avatar :color="token.type === 1 ? 'secondary' : 'primary'" variant="flat" size="40">
+                  <span class="text-subtitle-2 font-weight-bold text-white">
+                    {{ token.symbol?.charAt(0) || 'T' }}
+                  </span>
                 </v-avatar>
               </template>
 
-              <v-list-item-title class="font-weight-bold">wBKC</v-list-item-title>
-              <v-list-item-subtitle>原生代币</v-list-item-subtitle>
+              <v-list-item-title class="font-weight-bold">{{ token.name || '未命名' }}</v-list-item-title>
+              <v-list-item-subtitle>{{ token.symbol || 'N/A' }}</v-list-item-subtitle>
 
               <template v-slot:append>
                 <div class="text-end">
-                  <div class="font-weight-bold">{{ walletStore.formatBalance(walletStore.wbkcBalance) }} wBKC</div>
-                  <div class="text-caption text-medium-emphasis">${{ walletStore.usdValue }} USD</div>
-                </div>
-              </template>
-            </v-list-item>
-
-            <v-divider inset></v-divider>
-
-            <!-- E20C 币 -->
-            <v-list-item class="py-3">
-              <template v-slot:prepend>
-                <v-avatar color="amber" variant="flat" size="40">
-                  <span class="text-subtitle-2 font-weight-bold text-white">E20C</span>
-                </v-avatar>
-              </template>
-
-              <v-list-item-title class="font-weight-bold">E20C</v-list-item-title>
-              <v-list-item-subtitle>平台代币</v-list-item-subtitle>
-
-              <template v-slot:append>
-                <div class="text-end">
-                  <div class="font-weight-bold">{{ walletStore.formatBalance(walletStore.e20cBalance) }} E20C</div>
-                  <div class="text-caption text-medium-emphasis">≈ ${{ e20cUsdValue }} USD</div>
+                  <div class="font-weight-bold">{{ formatBalance(token.balance) }} {{ token.symbol || '' }}</div>
+                  <div class="text-caption text-medium-emphasis">{{ formatAddress(token.address) }}</div>
                 </div>
               </template>
             </v-list-item>
           </v-list>
 
-          <div v-else class="pa-4">
-            <v-row>
-              <!-- wBKC 卡片 -->
-              <v-col cols="12" sm="6">
-                <v-card class="rounded-lg" elevation="0" variant="outlined">
-                  <v-card-text>
-                    <div class="d-flex align-center mb-3">
-                      <v-avatar color="primary" variant="flat" size="38" class="mr-3">
-                        <span class="text-subtitle-2 font-weight-bold text-white">wBKC</span>
-                      </v-avatar>
-                      <div>
-                        <div class="font-weight-bold">wBKC</div>
-                        <div class="text-caption text-medium-emphasis">原生代币</div>
-                      </div>
-                    </div>
-
-                    <div class="text-h6 font-weight-bold mb-1">
-                      {{ walletStore.formatBalance(walletStore.wbkcBalance) }} wBKC
-                    </div>
-                    <div class="text-caption text-medium-emphasis">
-                      ≈ ${{ walletStore.usdValue }} USD
-                    </div>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-
-              <!-- E20C 卡片 -->
-              <v-col cols="12" sm="6">
-                <v-card class="rounded-lg" elevation="0" variant="outlined">
-                  <v-card-text>
-                    <div class="d-flex align-center mb-3">
-                      <v-avatar color="amber" variant="flat" size="38" class="mr-3">
-                        <span class="text-subtitle-2 font-weight-bold text-white">E20C</span>
-                      </v-avatar>
-                      <div>
-                        <div class="font-weight-bold">E20C</div>
-                        <div class="text-caption text-medium-emphasis">平台代币</div>
-                      </div>
-                    </div>
-
-                    <div class="text-h6 font-weight-bold mb-1">
-                      {{ walletStore.formatBalance(walletStore.e20cBalance) }} E20C
-                    </div>
-                    <div class="text-caption text-medium-emphasis">
-                      ≈ ${{ e20cUsdValue }} USD
-                    </div>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-            </v-row>
+          <div v-else class="pa-8 text-center">
+            <v-icon size="48" class="text-medium-emphasis mb-2">mdi-wallet-outline</v-icon>
+            <p class="text-body-2 text-medium-emphasis">暂无代币资产</p>
+            <p class="text-caption text-medium-emphasis mt-2">请先扫描区块链或获取代币</p>
           </div>
         </v-card>
 
-        <!-- 市场行情卡片 -->
-        <!-- 注释原因：合约不提供24h涨跌、成交量、市值等统计数据 -->
-        <!-- 可用接口：getExchangeRate()仅返回当前汇率(rateAToB, rateBToA) -->
-        <!-- <v-card class="mb-6 rounded-lg" elevation="1">
+        <!-- 流动性池 LP Token 列表 -->
+        <v-card class="mb-6 rounded-lg" elevation="1">
           <v-toolbar density="compact" flat color="background">
-            <v-toolbar-title class="font-weight-bold">市场行情</v-toolbar-title>
+            <v-toolbar-title class="font-weight-bold">流动性池 LP Token</v-toolbar-title>
             <v-spacer></v-spacer>
-            <v-btn icon variant="text" size="small">
-              <v-icon size="small">mdi-refresh</v-icon>
-            </v-btn>
+            <v-chip size="small" color="secondary" variant="tonal">
+              {{ lpBalances.length }} 个池子
+            </v-chip>
           </v-toolbar>
 
           <v-divider></v-divider>
 
-          <v-table density="compact" class="market-table">
-            <thead>
-              <tr>
-                <th class="text-left">代币</th>
-                <th class="text-right">最新价格</th>
-                <th class="text-right">24h涨跌</th>
-                <th class="text-right">24h成交量</th>
-                <th class="text-right">市值</th>
-                <th class="text-right">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>
-                  <div class="d-flex align-center">
-                    <v-avatar color="primary" variant="flat" size="28" class="mr-2">
-                      <span class="text-caption font-weight-bold text-white">wBKC</span>
-                    </v-avatar>
-                    <span class="font-weight-medium text-truncate" style="max-width: 100px;">wBKC</span>
-                  </div>
-                </td>
-                <td class="text-right">$0.10</td>
-                <td class="text-right text-success">+2.4%</td>
-                <td class="text-right">$245,789</td>
-                <td class="text-right">$10,000,000</td>
-                <td class="text-right">
-                  <v-btn color="primary" size="x-small" variant="text" to="/swap">兑换</v-btn>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div class="d-flex align-center">
-                    <v-avatar color="amber" variant="flat" size="28" class="mr-2">
-                      <span class="text-caption font-weight-bold text-white">E20C</span>
-                    </v-avatar>
-                    <span class="font-weight-medium text-truncate" style="max-width: 100px;">E20C</span>
-                  </div>
-                </td>
-                <td class="text-right">$0.01</td>
-                <td class="text-right text-error">-1.2%</td>
-                <td class="text-right">$124,567</td>
-                <td class="text-right">$5,000,000</td>
-                <td class="text-right">
-                  <v-btn color="primary" size="x-small" variant="text" to="/swap">兑换</v-btn>
-                </td>
-              </tr>
-            </tbody>
-          </v-table>
-        </v-card> -->
+          <div v-if="loading && lpBalances.length === 0" class="pa-8 text-center">
+            <v-progress-circular indeterminate color="primary" size="48" class="mb-4"></v-progress-circular>
+            <p class="text-body-2 text-medium-emphasis">正在加载 LP Token...</p>
+          </div>
 
-         <!-- 近期活动卡片 -->
-         <!-- 注释原因：合约不提供交易历史查询接口，需要监听Transfer/Swap事件或使用localStorage -->
-         <!-- <v-card class="mb-6 rounded-lg" elevation="1">
-            <v-toolbar density="compact" flat color="background">
-               <v-toolbar-title class="font-weight-bold">近期活动</v-toolbar-title>
-               <v-spacer></v-spacer>
-               <v-btn variant="text" size="small" to="/history" append-icon="mdi-chevron-right">
-                  查看全部
-               </v-btn>
-            </v-toolbar>
-             <v-divider></v-divider>
-            <v-list class="py-0">
-               <v-list-item class="py-3">
-                  <template v-slot:prepend>
-                     <v-avatar color="success" variant="tonal" size="32">
-                        <v-icon size="small">mdi-arrow-bottom-left</v-icon>
-                     </v-avatar>
-                  </template>
-                  <v-list-item-title class="font-weight-medium">收到 wBKC</v-list-item-title>
-                  <v-list-item-subtitle class="text-caption text-medium-emphasis">从 0xAbCd... | 2023-10-28 10:30</v-list-item-subtitle>
-                   <template v-slot:append>
-                     <div class="text-end">
-                         <div class="font-weight-medium text-success">+ 5.00 wBKC</div>
-                         <div class="text-caption text-medium-emphasis">≈ $0.50 USD</div>
-                     </div>
-                   </template>
-               </v-list-item>
-               <v-divider inset></v-divider>
-                <v-list-item class="py-3">
-                  <template v-slot:prepend>
-                     <v-avatar color="error" variant="tonal" size="32">
-                        <v-icon size="small">mdi-arrow-top-right</v-icon>
-                     </v-avatar>
-                  </template>
-                  <v-list-item-title class="font-weight-medium">发送 E20C</v-list-item-title>
-                  <v-list-item-subtitle class="text-caption text-medium-emphasis">至 0xEfGh... | 2023-10-27 15:00</v-list-item-subtitle>
-                   <template v-slot:append>
-                     <div class="text-end">
-                         <div class="font-weight-medium text-error">- 100.00 E20C</div>
-                         <div class="text-caption text-medium-emphasis">≈ $1.00 USD</div>
-                     </div>
-                   </template>
-               </v-list-item>
-                 <v-divider inset></v-divider>
-                <v-list-item class="py-3">
-                  <template v-slot:prepend>
-                     <v-avatar color="warning" variant="tonal" size="32">
-                        <v-icon size="small">mdi-swap-horizontal</v-icon>
-                     </v-avatar>
-                  </template>
-                  <v-list-item-title class="font-weight-medium">兑换 wBKC 换 E20C</v-list-item-title>
-                  <v-list-item-subtitle class="text-caption text-medium-emphasis">10 wBKC → 100 E20C | 2023-10-27 11:45</v-list-item-subtitle>
-                   <template v-slot:append>
-                     <div class="text-end">
-                         <div class="font-weight-medium text-error">- 10 wBKC</div>
-                         <div class="text-caption text-success">+ 100 E20C</div>
-                     </div>
-                   </template>
-               </v-list-item>
-               <v-divider inset></v-divider>
-                <v-list-item class="py-3">
-                  <template v-slot:prepend>
-                     <v-avatar color="success" variant="tonal" size="32">
-                        <v-icon size="small">mdi-arrow-bottom-left</v-icon>
-                     </v-avatar>
-                  </template>
-                  <v-list-item-title class="font-weight-medium">收到 E20C</v-list-item-title>
-                  <v-list-item-subtitle class="text-caption text-medium-emphasis">从 0x1a2b... | 2023-10-26 09:00</v-list-item-subtitle>
-                   <template v-slot:append>
-                     <div class="text-end">
-                         <div class="font-weight-medium text-success">+ 200.00 E20C</div>
-                         <div class="text-caption text-medium-emphasis">≈ $2.00 USD</div>
-                     </div>
-                   </template>
-               </v-list-item>
-                 <v-divider inset></v-divider>
-                <v-list-item class="py-3">
-                  <template v-slot:prepend>
-                     <v-avatar color="error" variant="tonal" size="32">
-                        <v-icon size="small">mdi-arrow-top-right</v-icon>
-                     </v-avatar>
-                  </template>
-                  <v-list-item-title class="font-weight-medium">发送 wBKC</v-list-item-title>
-                  <v-list-item-subtitle class="text-caption text-medium-emphasis">至 0x3c4d... | 2023-10-25 18:30</v-list-item-subtitle>
-                   <template v-slot:append>
-                     <div class="text-end">
-                         <div class="font-weight-medium text-error">- 2.50 wBKC</div>
-                         <div class="text-caption text-medium-emphasis">≈ $0.25 USD</div>
-                     </div>
-                   </template>
-               </v-list-item>
-            </v-list>
-         </v-card> -->
+          <v-list v-else-if="lpBalances.length > 0" class="py-0">
+            <v-list-item
+              v-for="pool in lpBalances"
+              :key="pool.address"
+              class="py-3"
+              @click="goToPoolDetail(pool.address)"
+              style="cursor: pointer"
+            >
+              <template v-slot:prepend>
+                <v-avatar color="info" variant="flat" size="40" class="mr-2">
+                  <span class="text-subtitle-2 font-weight-bold text-white">
+                    {{ pool.token0Symbol?.charAt(0) || 'A' }}
+                  </span>
+                </v-avatar>
+                <v-avatar color="secondary" variant="flat" size="40">
+                  <span class="text-subtitle-2 font-weight-bold text-white">
+                    {{ pool.token1Symbol?.charAt(0) || 'B' }}
+                  </span>
+                </v-avatar>
+              </template>
+
+              <v-list-item-title class="font-weight-bold">{{ pool.name || '未命名池' }}</v-list-item-title>
+              <v-list-item-subtitle>{{ pool.token0Symbol }}/{{ pool.token1Symbol }}</v-list-item-subtitle>
+
+              <template v-slot:append>
+                <div class="text-end">
+                  <div class="font-weight-bold">{{ formatBalance(pool.lpBalance) }} LP</div>
+                  <div class="text-caption text-medium-emphasis">占比: {{ pool.sharePercentage }}%</div>
+                </div>
+              </template>
+            </v-list-item>
+          </v-list>
+
+          <div v-else class="pa-8 text-center">
+            <v-icon size="48" class="text-medium-emphasis mb-2">mdi-water-outline</v-icon>
+            <p class="text-body-2 text-medium-emphasis">暂无 LP Token</p>
+            <p class="text-caption text-medium-emphasis mt-2">请先扫描区块链或添加流动性</p>
+          </div>
+        </v-card>
       </v-col>
     </v-row>
-
-    <!-- 错误提示 -->
-    <v-snackbar v-model="showError" color="error">
-      {{ walletStore.error }}
-      <template v-slot:actions>
-        <v-btn variant="text" @click="showError = false">
-          关闭
-        </v-btn>
-      </template>
-    </v-snackbar>
   </v-container>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useWalletStore } from '@/store/wallet'
-import { Line } from 'vue-chartjs'
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-} from 'chart.js'
-import { format } from 'date-fns' // 用于格式化日期
+import { useContractsStore } from '@/store/contracts'
+import contractInteractionService from '@/services/contractInteractionService'
+import poolService from '@/services/poolService'
+import connectionService from '@/services/connectionService'
+import { formatAddress, formatBalance } from '@/utils/formatters'
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-)
-
+const router = useRouter()
 const walletStore = useWalletStore()
-const showError = ref(false)
-const viewMode = ref('list')
+const contractsStore = useContractsStore()
+
+const loading = ref(false)
 const lastUpdated = ref('刚刚')
+const tokenBalances = ref<Array<{
+  address: string
+  name: string
+  symbol: string
+  balance: string
+  type: number
+}>>([])
+const lpBalances = ref<Array<{
+  address: string
+  name: string
+  token0Symbol: string
+  token1Symbol: string
+  lpBalance: string
+  sharePercentage: string
+}>>([])
 
-// 行情走势相关
-const selectedTimeframe = ref('week') // 'day', 'week', 'month'
-const chartStartDate = ref('')
-const chartEndDate = ref('')
+// 使用统一的格式化工具函数（已从 utils/formatters 导入）
 
-// 更新图表日期范围的函数
-const updateChartDates = () => {
-  const endDate = new Date()
-  let startDate = new Date()
-  
-  switch (selectedTimeframe.value) {
-    case 'day':
-      startDate.setDate(endDate.getDate() - 1)
-      break
-    case 'week':
-      startDate.setDate(endDate.getDate() - 7)
-      break
-    case 'month':
-      startDate.setMonth(endDate.getMonth() - 1)
-      break
-  }
-  chartStartDate.value = format(startDate, 'M/d')
-  chartEndDate.value = format(endDate, 'M/d')
-}
-
-watch(selectedTimeframe, updateChartDates, { immediate: true })
-
-// 计算 E20C 的美元价值 (E20C 到 wBKC 到 USD)
-const e20cUsdValue = computed(() => {
+// 计算总USD价值
+const totalUsdValue = computed(() => {
   try {
-    // E20C 到 wBKC 的汇率：1 E20C = 0.1 wBKC
-    // wBKC 到 USD 的汇率：1 wBKC = 0.1 USD
-    // 因此 1 E20C = 0.01 USD
-    if (!walletStore.e20cBalance) return '0.00'; // 确保 e20cBalance 存在
-    const balanceNum = parseFloat(walletStore.e20cBalance);
-    if (isNaN(balanceNum)) return '0.00';
-    return (balanceNum * 0.01).toFixed(2)
+    let total = 0
+    
+    // 这里可以根据实际需求计算总价值
+    // 目前简化处理，只计算wBKC和E20C的价值
+    const wbkcBalance = parseFloat(walletStore.wbkcBalance) || 0
+    const e20cBalance = parseFloat(walletStore.e20cBalance) || 0
+    
+    total += wbkcBalance * 0.1 // wBKC 到 USD
+    total += e20cBalance * 0.01 // E20C 到 USD
+    
+    return total.toFixed(2)
   } catch {
     return '0.00'
   }
 })
 
-// 监听错误状态
-watch(() => walletStore.error, (newError) => {
-  if (newError) {
-    showError.value = true
-  }
-})
-
 // 刷新余额
 const refreshBalances = async () => {
-  await walletStore.refreshBalances()
-  lastUpdated.value = new Date().toLocaleTimeString()
+  loading.value = true
+  
+  try {
+    // 获取用户地址
+    const wallet = connectionService.getWallet()
+    const userAddress = wallet.address
+    
+    if (!userAddress) {
+      return
+    }
+
+    // 获取所有代币列表
+    const allTokens = contractsStore.allTokens
+    
+    // 获取所有代币余额
+    const tokenBalancePromises = allTokens.map(async (token) => {
+      try {
+        const balance = await contractInteractionService.getERC20Balance(token.address, userAddress)
+        
+        // 获取代币信息
+        const tokenInfo = token.type === 1
+          ? await contractInteractionService.getWBKCInfo(token.address)
+          : await contractInteractionService.getERC20Info(token.address)
+        
+        return {
+          address: token.address,
+          name: tokenInfo.name || '未命名',
+          symbol: tokenInfo.symbol || 'N/A',
+          balance: balance.toString(),
+          type: token.type
+        }
+      } catch (err) {
+        // 静默失败，不显示该代币
+        return null
+      }
+    })
+    
+    const tokenResults = await Promise.all(tokenBalancePromises)
+    tokenBalances.value = tokenResults.filter(t => t !== null && parseFloat(t.balance) > 0) as any[]
+    
+    // 获取所有池子列表
+    const pools = await poolService.getAllPools()
+    
+    // 获取每个池子的LP Token余额
+    const lpBalancePromises = pools.map(async (pool) => {
+      try {
+        const abi = contractInteractionService.getAbi('amm')
+        const lpBalance = await contractInteractionService.callViewFunction({
+          address: pool.address,
+          abi,
+          functionName: 'userLpToken',
+          args: [userAddress]
+        })
+        
+        const lpBalanceNum = parseFloat(lpBalance.toString())
+        const totalLpSupplyNum = parseFloat(pool.totalLpSupplyRaw || '0')
+        
+        let sharePercentage = '0'
+        if (totalLpSupplyNum > 0 && lpBalanceNum > 0) {
+          sharePercentage = ((lpBalanceNum / totalLpSupplyNum) * 100).toFixed(4)
+        }
+        
+        return {
+          address: pool.address,
+          name: pool.name || '未命名池',
+          token0Symbol: pool.token0.symbol || 'A',
+          token1Symbol: pool.token1.symbol || 'B',
+          lpBalance: lpBalance.toString(),
+          sharePercentage
+        }
+      } catch (err) {
+        return null
+      }
+    })
+    
+    const lpResults = await Promise.all(lpBalancePromises)
+    lpBalances.value = lpResults.filter(p => p !== null && parseFloat(p.lpBalance) > 0) as any[]
+    
+    lastUpdated.value = new Date().toLocaleTimeString()
+  } catch (err: any) {
+    console.error('刷新余额失败:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 跳转到代币详情
+const goToTokenDetail = (address: string) => {
+  router.push(`/coindetail/${address}`)
+}
+
+// 跳转到池子详情
+const goToPoolDetail = (address: string) => {
+  router.push(`/pooldetail/${address}`)
 }
 
 // 组件挂载时刷新数据
 onMounted(() => {
   refreshBalances()
 })
-
-const chartOptions = ref({
-  responsive: true,
-  maintainAspectRatio: false,
-  scales: {
-    y: {
-      beginAtZero: false,
-      display: false, // 不显示y轴
-    },
-    x: {
-      display: false, // 不显示x轴
-    }
-  },
-  plugins: {
-    legend: {
-      display: false, // 不显示图例
-    },
-    tooltip: {
-      enabled: true, // 启用工具提示
-      mode: 'index',
-      intersect: false,
-      callbacks: {
-        label: function(context: any) {
-          return `价格: $${context.parsed.y.toFixed(2)}`;
-        }
-      }
-    }
-  },
-  elements: {
-    line: {
-      tension: 0.3, // 线条平滑度
-      borderColor: 'rgba(54, 162, 235, 0.8)', // 使用明确的蓝色
-      borderWidth: 2,
-      fill: true,
-      backgroundColor: 'rgba(54, 162, 235, 0.1)', // 使用明确的浅蓝色作为区域填充色
-    },
-    point: {
-      radius: 0, // 不显示数据点
-      hoverRadius: 4,
-    }
-  }
-});
-
-// 模拟图表数据
-const generatePriceData = (points: number, volatility = 0.2, startPrice = 100) => {
-  const data = [];
-  let price = startPrice;
-  for (let i = 0; i < points; i++) {
-    data.push(price);
-    price += (Math.random() - 0.5) * volatility * price;
-    if (price < 0) price = 0; // 防止价格为负
-  }
-  return data;
-};
-
-const dailyData = computed(() => ({
-  labels: Array.from({ length: 24 }, (_, i) => `${i}:00`),
-  datasets: [
-    {
-      label: '今日价格',
-      data: generatePriceData(24, 0.05, Math.random() * 5 + 9.5), // 模拟0.05-0.2 USD范围波动
-    }
-  ]
-}));
-
-const weeklyData = computed(() => ({
-  labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
-  datasets: [
-    {
-      label: '本周价格',
-      data: generatePriceData(7, 0.1, Math.random() * 10 + 90), // 模拟 90-110 USD范围波动
-    }
-  ]
-}));
-
-const monthlyData = computed(() => {
-  const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
-  return {
-    labels: Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`),
-    datasets: [
-      {
-        label: '本月价格',
-        data: generatePriceData(daysInMonth, 0.15, Math.random() * 20 + 80), // 模拟 80-120 USD范围波动
-      }
-    ]
-  };
-});
-
-const currentChartData = computed(() => {
-  switch (selectedTimeframe.value) {
-    case 'day':
-      return dailyData.value;
-    case 'week':
-      return weeklyData.value;
-    case 'month':
-      return monthlyData.value;
-    default:
-      return weeklyData.value;
-  }
-});
 </script>
 
 <style scoped>
-.market-table th,
-.market-table td {
-  white-space: nowrap;
+.hover-row {
+  transition: background-color 0.2s ease;
 }
 
-.price-chart-container {
-  height: 80px; /* 调整图表容器高度 */
-  position: relative;
+.hover-row:hover {
+  background-color: rgba(var(--v-theme-primary), 0.05);
 }
-
-/* 移除旧的占位符样式 */
 </style>

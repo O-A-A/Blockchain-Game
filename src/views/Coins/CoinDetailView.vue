@@ -8,19 +8,14 @@
 
     <!-- 错误状态 -->
     <v-alert v-else-if="error" type="error" rounded="lg" class="mb-4">
-          {{ error }}
+      {{ error }}
       <v-btn color="white" variant="text" @click="goBack" class="mt-2">返回</v-btn>
-        </v-alert>
+    </v-alert>
 
     <!-- 代币详情 -->
     <template v-else-if="tokenInfo">
       <!-- 返回按钮 -->
-      <v-btn
-        variant="text"
-        prepend-icon="mdi-arrow-left"
-        class="mb-6"
-        @click="goBack"
-      >
+      <v-btn variant="text" prepend-icon="mdi-arrow-left" class="mb-6" @click="goBack">
         返回代币列表
       </v-btn>
 
@@ -31,8 +26,8 @@
             <div class="d-flex align-center mb-4">
               <v-avatar :color="isWBKC ? 'secondary' : 'primary'" size="64" class="mr-4">
                 <span class="text-white text-h4">{{ tokenInfo.symbol ? tokenInfo.symbol.charAt(0) : 'T' }}</span>
-                </v-avatar>
-                <div class="flex-grow-1">
+              </v-avatar>
+              <div class="flex-grow-1">
                 <h1 class="text-h4 font-weight-bold">{{ tokenInfo.name || '未命名代币' }}</h1>
                 <div class="text-body-1 text-medium-emphasis">{{ tokenInfo.symbol || 'N/A' }}</div>
                 <v-chip size="small" :color="isWBKC ? 'secondary' : 'primary'" class="mt-2">
@@ -42,13 +37,8 @@
                   {{ formatAddress(tokenAddress) }}
                 </v-chip>
               </div>
-              <v-btn
-                color="primary"
-                prepend-icon="mdi-refresh"
-                @click="loadTokenInfo"
-                :loading="refreshing"
-                rounded="lg"
-              >
+              <v-btn color="primary" prepend-icon="mdi-refresh" @click="loadTokenInfo" :loading="refreshing"
+                rounded="lg">
                 刷新数据
               </v-btn>
             </div>
@@ -56,7 +46,7 @@
             <v-divider class="my-4"></v-divider>
 
             <!-- 关键指标 -->
-              <v-row>
+            <v-row>
               <v-col cols="12" sm="6" md="3">
                 <div class="text-center">
                   <v-icon size="small" color="primary">mdi-chart-box</v-icon>
@@ -86,59 +76,15 @@
                   <v-icon size="small" color="warning">mdi-account</v-icon>
                   <div class="text-caption text-medium-emphasis mt-1">合约拥有者</div>
                   <div class="text-caption font-mono">{{ formatAddress(tokenInfo.owner) }}</div>
-                  <v-btn 
-                    size="x-small" 
-                    icon 
-                    variant="text"
-                    @click="copyToClipboard(tokenInfo.owner)"
-                  >
-                      <v-icon size="small">mdi-content-copy</v-icon>
-                    </v-btn>
-                  </div>
-                </v-col>
-            </v-row>
-          </v-card>
-                </v-col>
-              </v-row>
-
-      <!-- WBKC 特有功能 -->
-      <v-row v-if="isWBKC" class="mb-6">
-        <v-col cols="12">
-          <v-card rounded="lg" elevation="1" class="pa-4 bg-secondary-light">
-            <div class="text-subtitle-1 font-weight-bold mb-3">
-              <v-icon class="mr-2">mdi-wrap</v-icon>
-              WBKC 包装/解包装
-            </div>
-            <div class="text-body-2 text-medium-emphasis mb-4">
-              WBKC 是 BKC 的包装版本，可以在智能合约中使用。你可以将 BKC 包装成 WBKC，或将 WBKC 解包装回 BKC。
-            </div>
-            <v-row>
-              <v-col cols="12" sm="6">
-                  <v-btn
-                  color="secondary"
-                    block
-                  rounded="lg"
-                  prepend-icon="mdi-package-variant"
-                  @click="setFunction('mintToken')"
-                >
-                  包装 BKC → WBKC
+                  <v-btn size="x-small" icon variant="text" @click="copyToClipboard(tokenInfo.owner)">
+                    <v-icon size="small">mdi-content-copy</v-icon>
                   </v-btn>
-            </v-col>
-              <v-col cols="12" sm="6">
-                  <v-btn
-                    color="secondary"
-                    block
-                  rounded="lg"
-                  prepend-icon="mdi-package-variant-closed-remove"
-                  @click="setFunction('burnToken')"
-                >
-                  解包装 WBKC → BKC
-                  </v-btn>
+                </div>
               </v-col>
             </v-row>
-              </v-card>
-            </v-col>
-          </v-row>
+          </v-card>
+        </v-col>
+      </v-row>
 
       <!-- 常用操作快捷按钮 -->
       <v-row class="mb-6">
@@ -149,93 +95,37 @@
               快捷操作
             </div>
             <v-row>
-              <v-col cols="12" sm="6" md="3">
-                <v-btn
-                  color="info"
-                  block
-                  rounded="lg"
-                  prepend-icon="mdi-wallet"
-                  @click="setFunction('balanceOf')"
-                >
+              <v-col cols="12" sm="6" md="4">
+                <v-btn color="info" block rounded="lg" prepend-icon="mdi-wallet" @click="setFunction('balanceOf')">
                   查询余额
                 </v-btn>
               </v-col>
-              <v-col cols="12" sm="6" md="3">
-                  <v-btn
-                    color="primary"
-                  block
-                  rounded="lg"
-                  prepend-icon="mdi-send"
-                  @click="setFunction('transfer')"
-                >
+              <v-col cols="12" sm="6" md="4">
+                <v-btn color="success" block rounded="lg" prepend-icon="mdi-send" @click="setFunction('transfer')">
                   转账
                 </v-btn>
               </v-col>
-              <v-col cols="12" sm="6" md="3">
-                <v-btn
-                  color="success"
-                  block
-                  rounded="lg"
-                  prepend-icon="mdi-check-circle"
-                  @click="setFunction('approve')"
-                >
+              <v-col cols="12" sm="6" md="4">
+                <v-btn color="success" block rounded="lg" prepend-icon="mdi-check-circle"
+                  @click="setFunction('approve')">
                   授权
                 </v-btn>
               </v-col>
-              <v-col cols="12" sm="6" md="3">
-                <v-btn
-                  color="info"
-                    block
-                  rounded="lg"
-                  prepend-icon="mdi-eye"
-                  @click="setFunction('allowance')"
-                >
+              <v-col cols="12" sm="6" md="4">
+                <v-btn color="info" block rounded="lg" prepend-icon="mdi-eye" @click="setFunction('allowanceOf')">
                   查询授权额度
-                  </v-btn>
+                </v-btn>
               </v-col>
-              <v-col cols="12" sm="6" md="3">
-                  <v-btn
-                  color="info"
-                    block
-                  rounded="lg"
-                  prepend-icon="mdi-information"
-                  @click="setFunction('totalSupply')"
-                >
+              <v-col cols="12" sm="6" md="4">
+                <v-btn color="info" block rounded="lg" prepend-icon="mdi-information"
+                  @click="setFunction('totalSupply')">
                   总供应量
-                  </v-btn>
+                </v-btn>
               </v-col>
-              <v-col cols="12" sm="6" md="3">
-                  <v-btn
-                  color="info"
-                    block
-                  rounded="lg"
-                  prepend-icon="mdi-label"
-                  @click="setFunction('name')"
-                >
+              <v-col cols="12" sm="6" md="4">
+                <v-btn color="info" block rounded="lg" prepend-icon="mdi-label" @click="setFunction('coin_name')">
                   代币名称
-                  </v-btn>
-              </v-col>
-              <v-col cols="12" sm="6" md="3">
-                  <v-btn
-                  color="info"
-                    block
-                  rounded="lg"
-                  prepend-icon="mdi-alpha-s-circle"
-                  @click="setFunction('symbol')"
-                >
-                  代币符号
-                  </v-btn>
-              </v-col>
-              <v-col cols="12" sm="6" md="3">
-                  <v-btn
-                  color="info"
-                    block
-                  rounded="lg"
-                  prepend-icon="mdi-decimal"
-                  @click="setFunction('decimals')"
-                >
-                  精度
-                  </v-btn>
+                </v-btn>
               </v-col>
             </v-row>
           </v-card>
@@ -245,12 +135,8 @@
       <!-- 通用合约函数调用器 -->
       <v-row>
         <v-col cols="12">
-          <ContractFunctionCaller
-            :key="functionCallerKey"
-            :contract-address="tokenAddress"
-            :contract-type="isWBKC ? 'wbkc' : 'erc20'"
-            ref="functionCallerRef"
-          />
+          <ContractFunctionCaller :key="functionCallerKey" :contract-address="tokenAddress"
+            :contract-type="isWBKC ? 'wbkc' : 'erc20'" ref="functionCallerRef" />
         </v-col>
       </v-row>
     </template>
@@ -269,7 +155,7 @@ import { useContractsStore } from '@/store/contracts'
 import contractInteractionService from '@/services/contractInteractionService'
 import connectionService from '@/services/connectionService'
 import ContractFunctionCaller from '@/components/ContractFunctionCaller.vue'
-import { ethers } from 'ethers'
+import {formatBalance} from '@/utils/formatters'
 
 const router = useRouter()
 const route = useRoute()
@@ -301,7 +187,7 @@ const loadTokenInfo = async () => {
   if (tokenInfo.value) {
     refreshing.value = true
   } else {
-  loading.value = true
+    loading.value = true
   }
   error.value = ''
 
@@ -319,7 +205,7 @@ const loadTokenInfo = async () => {
     if (!storedContract) {
       throw new Error('合约未找到，请先扫描区块链')
     }
-    
+
     const contractType = storedContract.type
 
     // 根据类型获取信息
@@ -344,7 +230,7 @@ const loadTokenInfo = async () => {
 // 加载用户余额
 const loadUserBalance = async () => {
   if (!tokenInfo.value) return
-  
+
   try {
     const balance = await contractInteractionService.getERC20Balance(tokenAddress, userAddress.value)
     userBalance.value = formatBalance(balance)
@@ -382,7 +268,7 @@ const setFunction = (functionName: string, prefillParams?: string[]) => {
           if (isWBKC.value) {
             // WBKC 不需要参数（通过 payable 传 ETH）
             params = []
-    } else {
+          } else {
             // ERC20：预填充接收地址为当前用户，数量留空
             params = [userAddress.value, '']
           }
@@ -395,9 +281,9 @@ const setFunction = (functionName: string, prefillParams?: string[]) => {
           params = []
       }
     }
-    
+
     functionCallerRef.value.setSelectedFunction(functionName, params)
-    
+
     // 滚动到函数调用器
     setTimeout(() => {
       const element = document.querySelector('.v-card')
@@ -405,30 +291,6 @@ const setFunction = (functionName: string, prefillParams?: string[]) => {
         element.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
       }
     }, 100)
-  }
-}
-
-// 格式化余额
-const formatBalance = (balance: string | number) => {
-  try {
-    if (!tokenInfo.value) return '0'
-    
-    const balanceStr = typeof balance === 'string' ? balance : balance.toString()
-    const num = parseFloat(balanceStr)
-    
-    if (num === 0) return '0'
-    if (num < 0.000001) return num.toExponential(4)
-    
-    // 保留6位小数并移除尾部0
-    const fixed = num.toFixed(6).replace(/\.?0+$/, '')
-    
-    // 添加千分位
-    const parts = fixed.split('.')
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-    
-    return parts.join('.')
-  } catch (err) {
-    return balance.toString()
   }
 }
 

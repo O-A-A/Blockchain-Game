@@ -1,154 +1,253 @@
 <template>
-  <v-card rounded="lg" elevation="1">
-    <v-card-title class="bg-surface-variant">
-      <v-icon class="mr-2">mdi-code-braces</v-icon>
-      合约函数调用
-    </v-card-title>
-
-    <v-card-text class="pa-4">
-      <!-- 函数选择 -->
-      <v-select
-        v-model="selectedFunction"
-        :items="functionItems"
-        item-title="name"
-        item-value="name"
-        return-object
-        label="选择函数"
-        variant="outlined"
-        density="comfortable"
-        rounded="lg"
-        @update:model-value="onFunctionChange"
-      >
-        <template v-slot:item="{ props, item }">
-          <v-list-item v-bind="props">
-            <template v-slot:prepend>
-              <v-icon :color="getFunctionTypeColor(item.raw.stateMutability)">
-                {{ getFunctionTypeIcon(item.raw.stateMutability) }}
-              </v-icon>
-            </template>
-            <template v-slot:title>
-              <span class="font-weight-medium">{{ item.raw.name }}</span>
-            </template>
-            <template v-slot:subtitle>
-              <span class="text-caption">{{ item.raw.stateMutability }}</span>
-            </template>
-          </v-list-item>
-        </template>
-      </v-select>
-
-      <!-- 函数说明 -->
-      <v-alert v-if="selectedFunction" :type="getFunctionAlertType(selectedFunction.stateMutability)" variant="tonal" class="mt-4">
-        <div class="text-caption">
-          <strong>{{ selectedFunction.name }}</strong>
-          <v-chip size="x-small" :color="getFunctionTypeColor(selectedFunction.stateMutability)" class="ml-2">
-            {{ selectedFunction.stateMutability }}
-          </v-chip>
-        </div>
-        <div class="text-caption mt-1">
-          {{ getFunctionDescription(selectedFunction.stateMutability) }}
-        </div>
-      </v-alert>
-
-      <!-- 函数参数 -->
-      <div v-if="selectedFunction && selectedFunction.inputs && selectedFunction.inputs.length > 0" class="mt-4">
-        <div class="text-subtitle-2 font-weight-bold mb-3">函数参数</div>
-        <v-row>
-          <v-col v-for="(input, index) in selectedFunction.inputs" :key="index" cols="12">
-            <v-text-field
-              v-model="functionParams[index]"
-              :label="`${input.name || `参数${index + 1}`} (${input.type})`"
-              :placeholder="`输入 ${input.type} 类型的值`"
-              variant="outlined"
-              density="comfortable"
-              rounded="lg"
-              :hint="getInputHint(input.type)"
-              persistent-hint
-            >
-              <template v-slot:prepend-inner>
-                <v-icon size="small" color="primary">mdi-code-tags</v-icon>
-              </template>
-            </v-text-field>
-          </v-col>
-        </v-row>
-      </div>
-
-      <!-- 特殊：如果需要发送 ETH (payable) -->
-      <v-text-field
-        v-if="selectedFunction && selectedFunction.stateMutability === 'payable'"
-        v-model="ethValue"
-        label="发送 ETH 数量"
-        placeholder="例如: 0.1"
-        variant="outlined"
-        density="comfortable"
-        rounded="lg"
-        class="mt-4"
-      >
-        <template v-slot:append-inner>
-          <v-chip size="small" color="warning">ETH</v-chip>
-        </template>
-      </v-text-field>
-
-      <!-- 调用按钮 -->
-      <v-btn
-        v-if="selectedFunction"
-        :color="selectedFunction.stateMutability === 'view' || selectedFunction.stateMutability === 'pure' ? 'primary' : 'success'"
-        size="large"
-        block
-        rounded="lg"
-        class="mt-4"
-        @click="callFunction"
-        :loading="loading"
-      >
-        <v-icon class="mr-2">
-          {{ selectedFunction.stateMutability === 'view' || selectedFunction.stateMutability === 'pure' ? 'mdi-eye' : 'mdi-send' }}
-        </v-icon>
-        {{ selectedFunction.stateMutability === 'view' || selectedFunction.stateMutability === 'pure' ? '查询' : '发送交易' }}
-      </v-btn>
-
-      <!-- 调用结果 -->
-      <v-card v-if="result" rounded="lg" variant="outlined" class="mt-4">
-        <v-card-title class="text-subtitle-2">
-          <v-icon class="mr-2" :color="result.success ? 'success' : 'error'">
-            {{ result.success ? 'mdi-check-circle' : 'mdi-alert-circle' }}
-          </v-icon>
-          调用结果
+  <v-row>
+    <!-- 查询信息板块 - View/Pure 函数 -->
+    <v-col cols="12" md="6">
+      <v-card rounded="lg" elevation="1" class="mb-4">
+        <v-card-title class="bg-primary-container text-primary">
+          <v-icon class="mr-2">mdi-eye</v-icon>
+          查询信息
         </v-card-title>
-        <v-card-text>
-          <v-alert :type="result.success ? 'success' : 'error'" variant="tonal">
-            <pre class="text-caption" style="white-space: pre-wrap; word-break: break-all;">{{ formatResult(result) }}</pre>
-          </v-alert>
-          
-          <!-- 如果是交易，显示交易详情 -->
-          <div v-if="result.success && result.hash" class="mt-3">
-            <div class="text-caption text-medium-emphasis mb-2">交易详情</div>
-            <v-chip size="small" class="mr-2" prepend-icon="mdi-identifier">
-              <span class="font-mono">{{ formatAddress(result.hash) }}</span>
-            </v-chip>
-            <v-chip v-if="result.blockNumber" size="small" prepend-icon="mdi-cube">
-              区块 {{ result.blockNumber }}
-            </v-chip>
+
+        <v-card-text class="pa-4">
+          <!-- 函数选择 -->
+          <v-select
+            v-model="selectedViewFunction"
+            :items="viewFunctions"
+            item-title="name"
+            item-value="name"
+            return-object
+            label="选择查询函数"
+            variant="outlined"
+            density="comfortable"
+            rounded="lg"
+            @update:model-value="onViewFunctionChange"
+          >
+            <template v-slot:item="{ props, item }">
+              <v-list-item v-bind="props">
+                <template v-slot:prepend>
+                  <v-icon color="primary" size="small">mdi-eye</v-icon>
+                </template>
+                <template v-slot:title>
+                  <span class="font-weight-medium">{{ item.raw.name }}</span>
+                </template>
+              </v-list-item>
+            </template>
+          </v-select>
+
+          <!-- 函数参数 -->
+          <div v-if="selectedViewFunction && selectedViewFunction.inputs && selectedViewFunction.inputs.length > 0" class="mt-4">
+            <div class="text-subtitle-2 font-weight-bold mb-3">函数参数</div>
+            <v-row>
+              <v-col v-for="(input, index) in selectedViewFunction.inputs" :key="index" cols="12">
+                <v-text-field
+                  v-model="viewFunctionParams[index]"
+                  :label="`${input.name || `参数${index + 1}`} (${input.type})`"
+                  :placeholder="`输入 ${input.type} 类型的值`"
+                  variant="outlined"
+                  density="comfortable"
+                  rounded="lg"
+                  :hint="getInputHint(input.type)"
+                  persistent-hint
+                />
+              </v-col>
+            </v-row>
           </div>
+
+          <!-- 查询按钮 -->
+          <v-btn
+            v-if="selectedViewFunction"
+            color="primary"
+            size="large"
+            block
+            rounded="lg"
+            class="mt-4"
+            @click="callViewFunction"
+            :loading="viewLoading"
+          >
+            <v-icon class="mr-2">mdi-magnify</v-icon>
+            查询
+          </v-btn>
+
+          <!-- 查询结果 -->
+          <v-card v-if="viewResult" rounded="lg" variant="outlined" class="mt-4">
+            <v-card-title class="text-subtitle-2">
+              <v-icon class="mr-2" :color="viewResult.success ? 'success' : 'error'">
+                {{ viewResult.success ? 'mdi-check-circle' : 'mdi-alert-circle' }}
+              </v-icon>
+              查询结果
+            </v-card-title>
+            <v-card-text>
+              <v-alert :type="viewResult.success ? 'success' : 'error'" variant="tonal">
+                <pre class="text-caption" style="white-space: pre-wrap; word-break: break-all;">{{ formatResult(viewResult) }}</pre>
+              </v-alert>
+            </v-card-text>
+          </v-card>
         </v-card-text>
       </v-card>
-    </v-card-text>
-  </v-card>
+    </v-col>
+
+    <!-- 调用函数板块 - 非 View/Pure 函数 -->
+    <v-col cols="12" md="6">
+      <v-card rounded="lg" elevation="1" class="mb-4">
+        <v-card-title class="bg-success-container text-success">
+          <v-icon class="mr-2">mdi-send</v-icon>
+          调用函数
+        </v-card-title>
+
+        <v-card-text class="pa-4">
+          <!-- 函数选择 -->
+          <v-select
+            v-model="selectedWriteFunction"
+            :items="writeFunctions"
+            item-title="name"
+            item-value="name"
+            return-object
+            label="选择调用函数"
+            variant="outlined"
+            density="comfortable"
+            rounded="lg"
+            @update:model-value="onWriteFunctionChange"
+          >
+            <template v-slot:item="{ props, item }">
+              <v-list-item v-bind="props">
+                <template v-slot:prepend>
+                  <v-icon :color="getFunctionTypeColor(item.raw.stateMutability)" size="small">
+                    {{ getFunctionTypeIcon(item.raw.stateMutability) }}
+                  </v-icon>
+                </template>
+                <template v-slot:title>
+                  <span class="font-weight-medium">{{ item.raw.name }}</span>
+                </template>
+                <template v-slot:subtitle>
+                  <span class="text-caption">{{ item.raw.stateMutability }}</span>
+                </template>
+              </v-list-item>
+            </template>
+          </v-select>
+
+          <!-- 函数说明 -->
+          <v-alert v-if="selectedWriteFunction" :type="getFunctionAlertType(selectedWriteFunction.stateMutability)" variant="tonal" class="mt-4">
+            <div class="text-caption">
+              <strong>{{ selectedWriteFunction.name }}</strong>
+              <v-chip size="x-small" :color="getFunctionTypeColor(selectedWriteFunction.stateMutability)" class="ml-2">
+                {{ selectedWriteFunction.stateMutability }}
+              </v-chip>
+            </div>
+            <div class="text-caption mt-1">
+              {{ getFunctionDescription(selectedWriteFunction.stateMutability) }}
+            </div>
+          </v-alert>
+
+          <!-- 函数参数 -->
+          <div v-if="selectedWriteFunction && selectedWriteFunction.inputs && selectedWriteFunction.inputs.length > 0" class="mt-4">
+            <div class="text-subtitle-2 font-weight-bold mb-3">函数参数</div>
+            <v-row>
+              <v-col v-for="(input, index) in selectedWriteFunction.inputs" :key="index" cols="12">
+                <v-text-field
+                  v-model="writeFunctionParams[index]"
+                  :label="`${input.name || `参数${index + 1}`} (${input.type})`"
+                  :placeholder="`输入 ${input.type} 类型的值`"
+                  variant="outlined"
+                  density="comfortable"
+                  rounded="lg"
+                  :hint="getInputHint(input.type)"
+                  persistent-hint
+                >
+                  <template v-slot:prepend-inner>
+                    <v-icon size="small" color="primary">mdi-code-tags</v-icon>
+                  </template>
+                </v-text-field>
+              </v-col>
+            </v-row>
+          </div>
+
+          <!-- 特殊：如果需要发送 ETH (payable) -->
+          <v-text-field
+            v-if="selectedWriteFunction && selectedWriteFunction.stateMutability === 'payable'"
+            v-model="ethValue"
+            label="发送 ETH 数量"
+            placeholder="例如: 0.1"
+            variant="outlined"
+            density="comfortable"
+            rounded="lg"
+            class="mt-4"
+          >
+            <template v-slot:append-inner>
+              <v-chip size="small" color="warning">ETH</v-chip>
+            </template>
+          </v-text-field>
+
+          <!-- 调用按钮 -->
+          <v-btn
+            v-if="selectedWriteFunction"
+            color="success"
+            size="large"
+            block
+            rounded="lg"
+            class="mt-4"
+            @click="callWriteFunction"
+            :loading="writeLoading"
+          >
+            <v-icon class="mr-2">mdi-send</v-icon>
+            发送交易
+          </v-btn>
+
+          <!-- 调用结果 -->
+          <v-card v-if="writeResult" rounded="lg" variant="outlined" class="mt-4">
+            <v-card-title class="text-subtitle-2">
+              <v-icon class="mr-2" :color="writeResult.success ? 'success' : 'error'">
+                {{ writeResult.success ? 'mdi-check-circle' : 'mdi-alert-circle' }}
+              </v-icon>
+              调用结果
+            </v-card-title>
+            <v-card-text>
+              <v-alert :type="writeResult.success ? 'success' : 'error'" variant="tonal">
+                <pre class="text-caption" style="white-space: pre-wrap; word-break: break-all;">{{ formatResult(writeResult) }}</pre>
+              </v-alert>
+              
+              <!-- 如果是交易，显示交易详情 -->
+              <div v-if="writeResult.success && writeResult.hash" class="mt-3">
+                <div class="text-caption text-medium-emphasis mb-2">交易详情</div>
+                <v-chip size="small" class="mr-2" prepend-icon="mdi-identifier">
+                  <span class="font-mono">{{ formatAddress(writeResult.hash) }}</span>
+                </v-chip>
+                <v-chip v-if="writeResult.blockNumber" size="small" prepend-icon="mdi-cube">
+                  区块 {{ writeResult.blockNumber }}
+                </v-chip>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-card-text>
+      </v-card>
+    </v-col>
+  </v-row>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import contractInteractionService from '@/services/contractInteractionService'
 import { ethers } from 'ethers'
+import { useDialog } from '@/composables/useDialog'
+import { useWalletStore } from '@/store/wallet'
 
 const props = defineProps<{
   contractAddress: string
   contractType: 'erc20' | 'wbkc' | 'amm'
 }>()
 
-const selectedFunction = ref<any>(null)
-const functionParams = ref<string[]>([])
+const { success, error: showError } = useDialog()
+const walletStore = useWalletStore()
+
+const selectedViewFunction = ref<any>(null)
+const viewFunctionParams = ref<string[]>([])
+const viewLoading = ref(false)
+const viewResult = ref<any>(null)
+
+const selectedWriteFunction = ref<any>(null)
+const writeFunctionParams = ref<string[]>([])
 const ethValue = ref('')
-const loading = ref(false)
-const result = ref<any>(null)
+const writeLoading = ref(false)
+const writeResult = ref<any>(null)
 
 // 获取 ABI
 const abi = computed(() => {
@@ -160,38 +259,141 @@ const functions = computed(() => {
   return abi.value.filter((item: any) => item.type === 'function')
 })
 
-// 函数列表项
-const functionItems = computed(() => {
-  return functions.value.map((func: any) => ({
-    title: func.name, // 保留以供其他地方使用，但 v-select 将使用 'name'
-    value: func,      // v-select 将使用 'name' 作为 value 键
-    ...func
+// View/Pure 函数列表
+const viewFunctions = computed(() => {
+  return functions.value.filter((f: any) => 
+    f.stateMutability === 'view' || f.stateMutability === 'pure'
+  ).map((func: any) => ({
+    ...func,
+    title: func.name,
+    value: func.name
   }))
 })
 
-// 当函数改变时
-const onFunctionChange = (func: any) => {
+// 非 View/Pure 函数列表
+const writeFunctions = computed(() => {
+  return functions.value.filter((f: any) => 
+    f.stateMutability !== 'view' && f.stateMutability !== 'pure'
+  ).map((func: any) => ({
+    ...func,
+    title: func.name,
+    value: func.name
+  }))
+})
+
+// 当查询函数改变时
+const onViewFunctionChange = (func: any) => {
   if (func) {
-    // 重置参数
-    functionParams.value = new Array(func.inputs?.length || 0).fill('')
+    viewFunctionParams.value = new Array(func.inputs?.length || 0).fill('')
+    viewResult.value = null
+  }
+}
+
+// 当调用函数改变时
+const onWriteFunctionChange = (func: any) => {
+  if (func) {
+    writeFunctionParams.value = new Array(func.inputs?.length || 0).fill('')
     ethValue.value = ''
-    result.value = null
+    writeResult.value = null
+  }
+}
+
+// 调用查询函数
+const callViewFunction = async () => {
+  if (!selectedViewFunction.value) return
+  
+  viewLoading.value = true
+  viewResult.value = null
+  
+  try {
+    const callResult = await contractInteractionService.callViewFunction({
+      address: props.contractAddress,
+      abi: abi.value,
+      functionName: selectedViewFunction.value.name,
+      args: viewFunctionParams.value.filter(p => p !== '')
+    })
+    
+    viewResult.value = {
+      success: true,
+      data: callResult
+    }
+  } catch (err: any) {
+    console.error('查询函数失败:', err)
+    showError('查询失败', err.message || '查询失败')
+  } finally {
+    viewLoading.value = false
+  }
+}
+
+// 调用写入函数
+const callWriteFunction = async () => {
+  if (!selectedWriteFunction.value) return
+
+  // 检查登录状态
+  if (!walletStore.isLoggedIn) {
+    showError('需要登录', '此操作需要登录，请先登录后再执行')
+    return
+  }
+  
+  writeLoading.value = true
+  writeResult.value = null
+  
+  try {
+    const txResult = await contractInteractionService.sendTransaction({
+      address: props.contractAddress,
+      abi: abi.value,
+      functionName: selectedWriteFunction.value.name,
+      args: writeFunctionParams.value.filter(p => p !== ''),
+      value: ethValue.value || undefined
+    })
+    
+    writeResult.value = {
+      success: txResult.success,
+      hash: txResult.hash,
+      blockNumber: txResult.receipt?.blockNumber,
+      error: txResult.error
+    }
+    
+    if (txResult.success) {
+      success(`${selectedWriteFunction.value.name} 调用成功`, txResult.hash ? `交易哈希: ${txResult.hash}` : '')
+    } else {
+      showError(`${selectedWriteFunction.value.name} 调用失败`, txResult.error || '未知错误')
+    }
+  } catch (err: any) {
+    console.error('调用函数失败:', err)
+    writeResult.value = {
+      success: false,
+      error: err.message || '调用失败'
+    }
+    showError('调用失败', err.message || '调用失败')
+  } finally {
+    writeLoading.value = false
   }
 }
 
 // 暴露方法给父组件（支持预填充参数）
 const setSelectedFunction = (functionName: string, prefillParams?: string[]) => {
   const func = functions.value.find((f: any) => f.name === functionName)
-  if (func) {
-    selectedFunction.value = func
-    onFunctionChange(func)
-  }
+  if (!func) return
   
-  // 如果提供了预填充参数，设置它们
-  if (prefillParams && prefillParams.length > 0) {
-    setTimeout(() => {
-      functionParams.value = [...prefillParams]
-    }, 50)
+  const isView = func.stateMutability === 'view' || func.stateMutability === 'pure'
+  
+  if (isView) {
+    selectedViewFunction.value = func
+    onViewFunctionChange(func)
+    if (prefillParams && prefillParams.length > 0) {
+      setTimeout(() => {
+        viewFunctionParams.value = [...prefillParams]
+      }, 50)
+    }
+  } else {
+    selectedWriteFunction.value = func
+    onWriteFunctionChange(func)
+    if (prefillParams && prefillParams.length > 0) {
+      setTimeout(() => {
+        writeFunctionParams.value = [...prefillParams]
+      }, 50)
+    }
   }
 }
 
@@ -200,64 +402,9 @@ defineExpose({
   setSelectedFunction
 })
 
-// 调用函数
-const callFunction = async () => {
-  if (!selectedFunction.value) return
-  
-  loading.value = true
-  result.value = null
-  
-  try {
-    const isViewFunction = selectedFunction.value.stateMutability === 'view' || 
-                          selectedFunction.value.stateMutability === 'pure'
-    
-    if (isViewFunction) {
-      // 调用只读函数
-      const callResult = await contractInteractionService.callViewFunction({
-        address: props.contractAddress,
-        abi: abi.value,
-        functionName: selectedFunction.value.name,
-        args: functionParams.value.filter(p => p !== '')
-      })
-      
-      result.value = {
-        success: true,
-        data: callResult
-      }
-    } else {
-      // 发送交易
-      const txResult = await contractInteractionService.sendTransaction({
-        address: props.contractAddress,
-        abi: abi.value,
-        functionName: selectedFunction.value.name,
-        args: functionParams.value.filter(p => p !== ''),
-        value: ethValue.value || undefined
-      })
-      
-      result.value = {
-        success: txResult.success,
-        hash: txResult.hash,
-        blockNumber: txResult.receipt?.blockNumber,
-        error: txResult.error
-      }
-    }
-  } catch (err: any) {
-    console.error('调用函数失败:', err)
-    result.value = {
-      success: false,
-      error: err.message || '调用失败'
-    }
-  } finally {
-    loading.value = false
-  }
-}
-
 // 获取函数类型颜色
 const getFunctionTypeColor = (stateMutability: string) => {
   switch (stateMutability) {
-    case 'view':
-    case 'pure':
-      return 'primary'
     case 'payable':
       return 'warning'
     default:
@@ -268,9 +415,6 @@ const getFunctionTypeColor = (stateMutability: string) => {
 // 获取函数类型图标
 const getFunctionTypeIcon = (stateMutability: string) => {
   switch (stateMutability) {
-    case 'view':
-    case 'pure':
-      return 'mdi-eye'
     case 'payable':
       return 'mdi-cash'
     default:
@@ -281,9 +425,6 @@ const getFunctionTypeIcon = (stateMutability: string) => {
 // 获取函数提示类型
 const getFunctionAlertType = (stateMutability: string) => {
   switch (stateMutability) {
-    case 'view':
-    case 'pure':
-      return 'info'
     case 'payable':
       return 'warning'
     default:
@@ -294,10 +435,6 @@ const getFunctionAlertType = (stateMutability: string) => {
 // 获取函数描述
 const getFunctionDescription = (stateMutability: string) => {
   switch (stateMutability) {
-    case 'view':
-      return '只读函数，查询区块链状态，不消耗 Gas'
-    case 'pure':
-      return '纯函数，不读取也不修改状态，不消耗 Gas'
     case 'payable':
       return '可支付函数，可以接收 ETH，会消耗 Gas'
     default:
@@ -352,4 +489,3 @@ pre {
   margin: 0;
 }
 </style>
-

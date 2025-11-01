@@ -48,28 +48,6 @@
           rounded="lg"
         ></v-select>
       </v-col>
-      <v-col cols="12" md="5" class="text-right">
-        <v-btn
-          color="info"
-          variant="outlined"
-          prepend-icon="mdi-refresh"
-          @click="scanNewBlocks"
-          :loading="isLoading"
-          :disabled="isLoading"
-          class="mr-2"
-        >
-          刷新新区块
-        </v-btn>
-        <v-btn
-          color="secondary"
-          prepend-icon="mdi-radar"
-          @click="scanContracts"
-          :loading="isLoading"
-          :disabled="isLoading"
-        >
-          扫描区块链
-        </v-btn>
-      </v-col>
     </v-row>
 
     <!-- 扫描状态提示 -->
@@ -118,7 +96,7 @@
                 <td>
                   <div class="d-flex align-center py-2">
                     <v-avatar color="primary" size="32" class="mr-3">
-                      <span class="text-white font-weight-bold">{{ (token.symbol || 'T').charAt(0) }}</span>
+                      <span class="text-white font-weight-bold">N</span>
                     </v-avatar>
                     <div>
                       <div class="font-weight-medium">{{ token.name || '未命名' }}</div>
@@ -219,7 +197,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useContractsStore } from '@/store/contracts'
-import contractScanService from '@/services/contractScanService'
 
 const router = useRouter()
 const contractsStore = useContractsStore()
@@ -248,8 +225,7 @@ const filteredErc20 = computed(() => {
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     tokens = tokens.filter(token =>
-      token.name.toLowerCase().includes(query) ||
-      token.symbol.toLowerCase().includes(query) ||
+      token.name.toString().toLowerCase().includes(query) ||
       token.address.toLowerCase().includes(query)
     )
   }
@@ -275,71 +251,6 @@ const filteredWrapped = computed(() => {
 
   return tokens
 })
-
-// 扫描区块链上的合约
-const scanContracts = async () => {
-  isLoading.value = true
-  scanMessage.value = '正在扫描区块链...'
-  
-  try {
-    const foundContracts = await contractScanService.scanContracts(
-      undefined,
-      undefined,
-      (current, total, found) => {
-        scanMessage.value = `正在扫描: ${current}/${total} 区块，已发现 ${found} 个合约`
-      }
-    )
-    scanMessage.value = `扫描完成！共发现 ${foundContracts.length} 个合约`
-    setTimeout(() => {
-      scanMessage.value = ''
-    }, 3000)
-  } catch (error) {
-    console.error('扫描失败:', error)
-    const errorMsg = error.message || '未知错误'
-    
-    // 如果是连接错误，提示用户重新登录
-    if (errorMsg.includes('未连接') || errorMsg.includes('请重新登录')) {
-      scanMessage.value = `${errorMsg}。请返回登录页重新连接`
-      // 3秒后跳转到登录页
-      setTimeout(() => {
-        router.push('/login')
-      }, 3000)
-    } else {
-      scanMessage.value = `扫描失败: ${errorMsg}`
-      setTimeout(() => {
-        scanMessage.value = ''
-      }, 5000)
-    }
-  } finally {
-    isLoading.value = false
-  }
-}
-
-// 快速扫描新区块
-const scanNewBlocks = async () => {
-  if (contractsStore.lastScanBlock === 0) {
-    scanMessage.value = '首次扫描，将扫描所有区块...'
-    return scanContracts()
-  }
-  
-  isLoading.value = true
-  scanMessage.value = '正在扫描新区块...'
-  
-  try {
-    const foundContracts = await contractScanService.scanNewBlocks()
-    scanMessage.value = `扫描完成！新发现 ${foundContracts.length} 个合约`
-    setTimeout(() => {
-      scanMessage.value = ''
-    }, 2000)
-  } catch (error) {
-    scanMessage.value = `扫描失败: ${error.message || '未知错误'}`
-    setTimeout(() => {
-      scanMessage.value = ''
-    }, 5000)
-  } finally {
-    isLoading.value = false
-  }
-}
 
 // 导航到代币详情页
 const goToDetail = (address) => {

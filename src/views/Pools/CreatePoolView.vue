@@ -17,21 +17,22 @@
           <v-divider></v-divider>
 
           <v-card-text class="pa-6">
-            <v-row align="center">
-              <v-col cols="12" md="5">
-                <v-select
-                  v-model="formData.tokenA"
-                  :items="tokenOptions"
-                  item-title="label"
-                  item-value="address"
-                  label="选择代币 A"
-                  prepend-inner-icon="mdi-currency-usd"
-                  variant="outlined"
-                  density="comfortable"
-                  rounded="lg"
-                  :rules="[v => !!v || '请选择代币 A']"
-                >
-                </v-select>
+            <v-form ref="poolForm" @submit.prevent="deployPool">
+              <v-row align="center">
+                <v-col cols="12" md="5">
+                  <v-select
+                    v-model="formData.tokenA"
+                    :items="tokenOptions"
+                    item-title="label"
+                    item-value="address"
+                    label="选择代币 A"
+                    prepend-inner-icon="mdi-currency-usd"
+                    variant="outlined"
+                    density="comfortable"
+                    rounded="lg"
+                    :rules="[v => !!v || '请选择代币 A']"
+                  >
+                  </v-select>
 
                 <!-- Token A 信息 -->
                 <v-card v-if="selectedTokenA" variant="outlined" rounded="lg" class="pa-3 mt-2">
@@ -95,6 +96,7 @@
             >
               <div class="font-weight-bold">交易对: {{ selectedTokenA.address }}/{{ selectedTokenB.address }}</div>
             </v-alert>
+            </v-form>
           </v-card-text>
         </v-card>
 
@@ -107,32 +109,34 @@
           <v-divider></v-divider>
 
           <v-card-text class="pa-6">
-            <v-text-field
-              v-model="formData.poolName"
-              label="流动性池名称"
-              placeholder="例如: USDC-ETH Pool"
-              prepend-inner-icon="mdi-tag"
-              variant="outlined"
-              density="comfortable"
-              rounded="lg"
-              :rules="[v => !!v || '池名称不能为空', v => v.length <= 31 || '名称不能超过31个字符']"
-              hint="池的名称，最长31字符（必填）"
-              persistent-hint
-              class="mb-4"
-            ></v-text-field>
+            <v-form ref="poolInfoForm">
+              <v-text-field
+                v-model="formData.poolName"
+                label="流动性池名称"
+                placeholder="例如: USDC-ETH Pool"
+                prepend-inner-icon="mdi-tag"
+                variant="outlined"
+                density="comfortable"
+                rounded="lg"
+                :rules="[v => !!v || '池名称不能为空', v => ethers.toUtf8Bytes(v || '').length <= 32 || '名称编码后不能超过32字节']"
+                hint="池的名称，UTF-8编码后最长32字节（必填）"
+                persistent-hint
+                class="mb-4"
+              ></v-text-field>
 
-            <v-text-field
-              v-model="formData.imgUrl"
-              label="图片 URL"
-              placeholder="例如: https://example.com/pool.png"
-              prepend-inner-icon="mdi-image"
-              variant="outlined"
-              density="comfortable"
-              rounded="lg"
-              :rules="[v => !!v || '图片URL不能为空', v => v.length <= 31 || 'URL不能超过31个字符']"
-              hint="池图标的URL地址，最长31字符（必填）"
-              persistent-hint
-            ></v-text-field>
+              <v-text-field
+                v-model="formData.imgUrl"
+                label="图片 URL"
+                placeholder="例如: https://example.com/pool.png"
+                prepend-inner-icon="mdi-image"
+                variant="outlined"
+                density="comfortable"
+                rounded="lg"
+                :rules="[v => !!v || '图片URL不能为空', v => ethers.toUtf8Bytes(v || '').length <= 32 || 'URL编码后不能超过32字节']"
+                hint="池图标的URL地址，UTF-8编码后最长32字节（必填）"
+                persistent-hint
+              ></v-text-field>
+            </v-form>
           </v-card-text>
         </v-card>
 
@@ -204,7 +208,10 @@
           <div class="mb-4">
             <div class="text-caption text-medium-emphasis mb-1">交易对</div>
             <div class="text-body-1 font-weight-medium">
-              {{ selectedTokenA?.address || '0x NULL' }} / {{ selectedTokenB?.address || '0x NULL'}}
+              {{ deployedPool.tokenA || '0x NULL' }} / {{ deployedPool.tokenB || '0x NULL' }}
+            </div>
+            <div v-if="deployedTokenA || deployedTokenB" class="text-caption text-medium-emphasis mt-1">
+              {{ deployedTokenA?.name || '未知代币' }} / {{ deployedTokenB?.name || '未知代币' }}
             </div>
           </div>
 
@@ -251,13 +258,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
+import { ethers } from 'ethers'
 import { useContractsStore } from '@/store/contracts'
 import contractDeployService from '@/services/contractDeployService'
+import { useDialog } from '@/composables/useDialog'
 
 const router = useRouter()
 const contractsStore = useContractsStore()
+const { error: showError, warning } = useDialog()
+
+// 表单引用
+const poolForm = ref<any>(null)
+const poolInfoForm = ref<any>(null)
 
 // 表单数据
 const formData = ref({
@@ -276,6 +290,17 @@ const deployedPool = ref({
   poolName: -1,
   tokenA: '',
   tokenB: ''
+})
+
+// 部署后的代币信息（用于显示）
+const deployedTokenA = computed(() => {
+  if (!deployedPool.value.tokenA) return null
+  return contractsStore.getContractByAddress(deployedPool.value.tokenA)
+})
+
+const deployedTokenB = computed(() => {
+  if (!deployedPool.value.tokenB) return null
+  return contractsStore.getContractByAddress(deployedPool.value.tokenB)
 })
 
 // 获取所有代币（ERC20 + WBKC）
@@ -352,15 +377,21 @@ const deployPool = async () => {
 
     showSuccessDialog.value = true
 
-    // 清空表单
+    // 清空表单并重置验证状态
     formData.value = {
       tokenA: '',
       tokenB: '',
       poolName: -1,
       imgUrl: -1
     }
-  } catch (error: any) {
-    alert(`部署失败: ${error.message || '未知错误'}`)
+    
+    // 重置表单验证状态
+    nextTick(() => {
+      poolForm.value?.resetValidation()
+      poolInfoForm.value?.resetValidation()
+    })
+  } catch (err: any) {
+    showError('部署失败', err.message || '未知错误')
   } finally {
     isLoading.value = false
   }
@@ -390,9 +421,9 @@ const goToPoolList = () => {
 // 页面加载时检查代币数量
 onMounted(() => {
   if (tokenOptions.value.length === 0) {
-    alert('暂无可用代币。请先部署代币或扫描区块链查找已部署的代币。')
+    warning('暂无可用代币', '请先部署代币或扫描区块链查找已部署的代币。')
   } else if (tokenOptions.value.length < 2) {
-    alert('至少需要 2 个代币才能创建流动性池。请先部署更多代币。')
+    warning('代币数量不足', '至少需要 2 个代币才能创建流动性池。请先部署更多代币。')
   }
 })
 </script>

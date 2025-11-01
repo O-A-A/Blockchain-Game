@@ -1,18 +1,22 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from './store/auth'
 import { useWalletStore } from './store/wallet'
 import { useTheme } from 'vuetify'
+import DialogMessage from './components/DialogMessage.vue'
+import contractScanService from './services/contractScanService'
+import connectionService from './services/connectionService'
+import { useDialog } from './composables/useDialog'
+import { formatAddress } from './utils/formatters'
 
 const drawer = ref(false)
 const theme = useTheme()
 const router = useRouter()
-const authStore = useAuthStore()
 const walletStore = useWalletStore()
+const { success, error } = useDialog()
 
-// 网络选项
-const networks = ['Mainnet', 'Testnet', 'Localhost']
+// 扫描状态
+const isScanning = ref(false)
 
 // 暗黑模式
 const isDarkTheme = computed(() => theme.global.current.value.dark)
@@ -22,31 +26,54 @@ const toggleTheme = () => {
   theme.global.name.value = isDarkTheme.value ? 'light' : 'dark'
 }
 
-// 格式化地址显示
-const formatAddress = (address) => {
-  if (!address) return ''
-  return address.slice(0, 6) + '...' + address.slice(-4)
+// 扫描区块链
+const scanBlockchain = async () => {
+  if (isScanning.value) return
+  
+  isScanning.value = true
+  
+  try {
+    const foundContracts = await contractScanService.scanContracts(
+      undefined,
+      undefined,
+      (current, total, found) => {
+        // 可以在控制台显示进度，或使用全局状态
+        // 扫描进度更新
+      }
+    )
+    
+    success('扫描完成', `共发现 ${foundContracts.length} 个合约（代币和池子）`)
+  } catch (err: any) {
+    console.error('扫描失败:', err)
+    error('扫描失败', err.message || '未知错误')
+  } finally {
+    isScanning.value = false
+  }
 }
+
+// 使用统一的格式化工具函数（已从 utils/formatters 导入）
 
 // 复制地址到剪贴板
 const copyAddress = () => {
   if (walletStore.address) {
     navigator.clipboard.writeText(walletStore.address)
       .then(() => {
-        alert('地址已复制')
+        success('复制成功', '地址已复制到剪贴板')
       })
       .catch(err => {
         console.error('复制失败：', err)
+        error('复制失败', '无法复制地址')
       })
   } else {
-     alert('没有可复制的地址')
+     error('复制失败', '没有可复制的地址')
   }
 }
 
 // 登出
 const logout = () => {
-  localStorage.removeItem('walletAddress')
-  localStorage.removeItem('walletPassword')
+  // 断开连接
+  connectionService.disconnect()
+  // 重置钱包状态
   walletStore.resetWalletState()
   
   router.push('/login')
@@ -55,40 +82,16 @@ const logout = () => {
 // 初始化钱包 - 检查是否有保存的登录信息并恢复连接
 onMounted(async () => {
   try {
-    // 尝试从sessionStorage恢复连接（如果在当前会话中）
-    const sessionNodeUrl = sessionStorage.getItem('currentNodeUrl')
-    const sessionPrivateKey = sessionStorage.getItem('currentPrivateKey')
-    const savedAddress = localStorage.getItem('walletAddress')
-    const savedNodeUrl = localStorage.getItem('nodeUrl')
+    // 初始化钱包状态（会尝试恢复连接）
+    await walletStore.init()
     
-    if (sessionNodeUrl && sessionPrivateKey) {
-      // 当前会话中有连接信息，直接恢复
-      const { default: connectionService } = await import('@/services/connectionService')
-      await connectionService.connect(sessionNodeUrl, sessionPrivateKey)
-      
-      walletStore.setAddress(savedAddress || connectionService.getAddress())
-      walletStore.setLoggedIn(true)
-      await walletStore.init()
-    } else if (savedAddress && savedNodeUrl) {
-      // 有保存的地址但没有会话连接，需要用户重新登录以输入密码
-      console.log('检测到保存的登录信息，但会话已过期，需要重新登录')
-      // 清除登录状态，强制重新登录
-      localStorage.removeItem('walletAddress')
-      localStorage.removeItem('nodeUrl')
-      if (router.currentRoute.value.path !== '/login' && router.currentRoute.value.path !== '/register') {
-        router.push('/login')
-      }
-    } else {
-      // 没有保存的登录信息，重定向到登录页
-      if (router.currentRoute.value.path !== '/login' && router.currentRoute.value.path !== '/register') {
-        router.push('/login')
-      }
-    }
   } catch (error) {
     console.error('钱包初始化失败:', error)
     // 如果恢复失败，清除会话数据并跳转到登录页
     sessionStorage.clear()
-    router.push('/login')
+    if (router.currentRoute.value.path !== '/login') {
+      router.push('/login')
+    }
   }
 })
 </script>
@@ -110,27 +113,51 @@ onMounted(async () => {
               <v-icon size="small" class="mr-1">mdi-home</v-icon>
               首页
             </v-tab>
-            <v-tab to="/dashboard" class="text-body-2">
+            <v-tab 
+              v-if="walletStore.isLoggedIn"
+              to="/dashboard" 
+              class="text-body-2"
+            >
               <v-icon size="small" class="mr-1">mdi-view-dashboard</v-icon>
               资产
             </v-tab>
-            <v-tab to="/coinlist" class="text-body-2">
+            <v-tab 
+              v-if="walletStore.isLoggedIn"
+              to="/coinlist" 
+              class="text-body-2"
+            >
               <v-icon size="small" class="mr-1">mdi-currency-usd</v-icon>
               代币列表
             </v-tab>
-            <v-tab to="/poollist" class="text-body-2">
+            <v-tab 
+              v-if="walletStore.isLoggedIn"
+              to="/poollist" 
+              class="text-body-2"
+            >
               <v-icon size="small" class="mr-1">mdi-water</v-icon>
               流动性池
             </v-tab>
-            <v-tab to="/send" class="text-body-2">
+            <v-tab 
+              v-if="walletStore.isLoggedIn"
+              to="/send" 
+              class="text-body-2"
+            >
               <v-icon size="small" class="mr-1">mdi-send</v-icon>
               转账
             </v-tab>
-            <v-tab to="/receive" class="text-body-2">
+            <v-tab 
+              v-if="walletStore.isLoggedIn"
+              to="/receive" 
+              class="text-body-2"
+            >
               <v-icon size="small" class="mr-1">mdi-qrcode</v-icon>
               接收
             </v-tab>
-            <v-tab to="/history" class="text-body-2">
+            <v-tab 
+              v-if="walletStore.isLoggedIn"
+              to="/history" 
+              class="text-body-2"
+            >
               <v-icon size="small" class="mr-1">mdi-history</v-icon>
               历史
             </v-tab>
@@ -139,30 +166,20 @@ onMounted(async () => {
         
         <v-spacer></v-spacer>
         
-        <!-- 网络选择器 -->
-        <v-menu>
-          <template v-slot:activator="{ props }">
-            <v-chip
-              class="mr-4"
-              color="primary"
-              variant="outlined"
-              v-bind="props"
-              size="small"
-            >
-              <v-icon start size="small" class="mr-1">mdi-lan-connect</v-icon>
-              Mainnet
-            </v-chip>
-          </template>
-          <v-list>
-            <v-list-item
-              v-for="(network, i) in networks"
-              :key="i"
-              :title="network"
-              @click="() => {}"
-              density="compact"
-            ></v-list-item>
-          </v-list>
-        </v-menu>
+        <!-- 扫描区块链按钮 -->
+        <v-btn
+          v-if="walletStore.isLoggedIn"
+          color="info"
+          variant="outlined"
+          prepend-icon="mdi-radar"
+          size="small"
+          class="mr-2"
+          @click="scanBlockchain"
+          :loading="isScanning"
+          :disabled="!walletStore.isLoggedIn"
+        >
+          <span class="d-none d-sm-inline">扫描区块链</span>
+        </v-btn>
         
         <!-- 用户菜单 - 只有当 walletStore.isLoggedIn 为 true 时才显示 -->
         <v-menu v-if="walletStore.isLoggedIn">
@@ -201,7 +218,7 @@ onMounted(async () => {
             <v-list-item @click="logout" prepend-icon="mdi-logout" title="登出" density="compact"></v-list-item>
           </v-list>
         </v-menu>
-         <!-- 如果未登录，显示登录/注册按钮 -->
+         <!-- 如果未登录，显示登录按钮 -->
          <v-btn
             v-else
             variant="text"
@@ -209,8 +226,8 @@ onMounted(async () => {
             to="/login"
             class="mr-2"
           >
-           <v-icon start size="small">mdi-account-circle-outline</v-icon>
-            登录/注册
+           <v-icon start size="small">mdi-login</v-icon>
+            登录
           </v-btn>
         
         <!-- 主题切换 -->
@@ -273,6 +290,7 @@ onMounted(async () => {
         ></v-list-item>
         
         <v-list-item
+          v-if="walletStore.isLoggedIn"
           title="资产概览"
           prepend-icon="mdi-view-dashboard"
           to="/dashboard"
@@ -281,6 +299,7 @@ onMounted(async () => {
         ></v-list-item>
         
         <v-list-item
+          v-if="walletStore.isLoggedIn"
           title="代币列表"
           prepend-icon="mdi-currency-usd"
           to="/coinlist"
@@ -289,6 +308,7 @@ onMounted(async () => {
         ></v-list-item>
 
         <v-list-item
+          v-if="walletStore.isLoggedIn"
           title="流动性池"
           prepend-icon="mdi-water"
           to="/poollist"
@@ -297,6 +317,7 @@ onMounted(async () => {
         ></v-list-item>
         
         <v-list-item
+          v-if="walletStore.isLoggedIn"
           title="发送"
           prepend-icon="mdi-send"
           to="/send"
@@ -305,6 +326,7 @@ onMounted(async () => {
         ></v-list-item>
         
         <v-list-item
+          v-if="walletStore.isLoggedIn"
           title="接收"
           prepend-icon="mdi-qrcode"
           to="/receive"
@@ -313,17 +335,19 @@ onMounted(async () => {
         ></v-list-item>
         
         <v-list-item
-          title="兑换"
-          prepend-icon="mdi-swap-horizontal"
-          to="/swap"
+          v-if="walletStore.isLoggedIn"
+          title="交易历史"
+          prepend-icon="mdi-history"
+          to="/history"
           rounded="lg"
           density="compact"
         ></v-list-item>
         
         <v-list-item
-          title="交易历史"
-          prepend-icon="mdi-history"
-          to="/history"
+          v-if="!walletStore.isLoggedIn"
+          title="登录"
+          prepend-icon="mdi-login"
+          to="/login"
           rounded="lg"
           density="compact"
         ></v-list-item>
@@ -348,13 +372,6 @@ onMounted(async () => {
           density="compact"
         ></v-list-item>
         
-        <v-list-item
-          title="网络管理"
-          prepend-icon="mdi-lan"
-          rounded="lg"
-          density="compact"
-        ></v-list-item>
-        
          <v-divider class="my-3"></v-divider>
         
         <!-- 登出按钮在侧边栏 - 只有当 walletStore.isLoggedIn 为 true 时才显示 -->
@@ -374,8 +391,17 @@ onMounted(async () => {
       </router-view>
     </v-main>
 
+    <!-- 全局弹窗消息 -->
+    <DialogMessage />
+
     <!-- 底部导航 - 仅移动端显示 -->
-    <v-bottom-navigation grow color="primary" elevation="4" class="d-md-none">
+    <v-bottom-navigation 
+      v-if="walletStore.isLoggedIn"
+      grow 
+      color="primary" 
+      elevation="4" 
+      class="d-md-none"
+    >
       <v-btn to="/home" value="home">
         <v-icon size="small">mdi-home</v-icon>
         <span class="text-caption">首页</span>

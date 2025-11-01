@@ -30,36 +30,6 @@ export const useWalletStore = defineStore('wallet', () => {
         }
     })
 
-    // 格式化余额，显示为整数
-    const formatBalance = (balance: string | number): string => {
-        try {
-            if (!balance) return '0';
-            
-            // 处理字符串类型的大整数
-            if (typeof balance === 'string') {
-                // 尝试转换为整数
-                try {
-                    const bigIntValue = BigInt(balance);
-                    return bigIntValue.toString();
-                } catch {
-                    // 如果无法转换为BigInt，尝试作为常规数字处理
-                    const num = parseFloat(balance);
-                    if (!isNaN(num)) {
-                        return Math.floor(num).toString();
-                    }
-                }
-            } else if (typeof balance === 'number') {
-                // 处理数字类型
-                return Math.floor(balance).toString();
-            }
-            
-            // 默认值
-            return '0';
-        } catch {
-            return '0';
-        }
-    }
-
     // 设置钱包地址
     const setAddress = (newAddress: string | null) => {
         address.value = newAddress;
@@ -449,7 +419,6 @@ export const useWalletStore = defineStore('wallet', () => {
         error,
         transactions,
         usdValue,
-        formatBalance,
         refreshBalances,
         swap,
         getEstimatedOutput,

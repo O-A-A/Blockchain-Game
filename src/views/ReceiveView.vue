@@ -299,6 +299,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useWalletStore } from '@/store/wallet'
+import { formatBalance } from '@/utils/formatters'
 
 const walletStore = useWalletStore()
 
@@ -334,19 +335,6 @@ const getBalanceForCurrency = (currency) => {
     return walletStore.e20cBalance
   }
   return '0.00'
-}
-
-// 格式化余额
-const formatBalance = (balance) => {
-  try {
-    const num = typeof balance === 'string' ? parseFloat(balance) : balance
-    if (!isNaN(num)) {
-      return num.toFixed(2)
-    }
-    return '0.00'
-  } catch {
-    return '0.00'
-  }
 }
 
 // 计算美元价值
