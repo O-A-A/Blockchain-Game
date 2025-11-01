@@ -10,17 +10,6 @@
       </v-col>
       <v-col cols="12" md="4" class="text-right">
         <v-btn
-          color="secondary"
-          size="large"
-          prepend-icon="mdi-refresh"
-          @click="loadPools"
-          :loading="loading"
-          rounded="lg"
-          class="mr-2"
-        >
-          刷新
-        </v-btn>
-        <v-btn
           color="primary"
           size="large"
           prepend-icon="mdi-plus"

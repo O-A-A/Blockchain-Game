@@ -259,7 +259,7 @@ const setFunction = (functionName: string, prefillParams?: string[]) => {
           // 授权：第一个参数为被授权地址（留空），第二个参数为授权额度（留空）
           params = []
           break
-        case 'allowance':
+        case 'allowanceOf':
           // 查询授权额度：预填充用户地址作为 owner，spender 留空
           params = [userAddress.value, '']
           break

@@ -118,7 +118,6 @@
                 variant="outlined"
                 density="comfortable"
                 rounded="lg"
-                :rules="[v => !!v || '池名称不能为空', v => ethers.toUtf8Bytes(v || '').length <= 32 || '名称编码后不能超过32字节']"
                 hint="池的名称，UTF-8编码后最长32字节（必填）"
                 persistent-hint
                 class="mb-4"
@@ -132,7 +131,6 @@
                 variant="outlined"
                 density="comfortable"
                 rounded="lg"
-                :rules="[v => !!v || '图片URL不能为空', v => ethers.toUtf8Bytes(v || '').length <= 32 || 'URL编码后不能超过32字节']"
                 hint="池图标的URL地址，UTF-8编码后最长32字节（必填）"
                 persistent-hint
               ></v-text-field>

@@ -224,8 +224,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import contractInteractionService from '@/services/contractInteractionService'
+import poolService from '@/services/poolService' // 引入 poolService
 import { ethers } from 'ethers'
 import { useDialog } from '@/composables/useDialog'
 import { useWalletStore } from '@/store/wallet'
@@ -233,6 +234,7 @@ import { useWalletStore } from '@/store/wallet'
 const props = defineProps<{
   contractAddress: string
   contractType: 'erc20' | 'wbkc' | 'amm'
+  poolInfo?: any // 接收完整的 poolInfo 对象
 }>()
 
 const { success, error: showError } = useDialog()
@@ -248,6 +250,11 @@ const writeFunctionParams = ref<string[]>([])
 const ethValue = ref('')
 const writeLoading = ref(false)
 const writeResult = ref<any>(null)
+
+// 监听 props.poolInfo 的变化
+watch(() => props.poolInfo, (newPoolInfo) => {
+  // console.log('Pool info updated in caller:', newPoolInfo)
+}, { deep: true })
 
 // 获取 ABI
 const abi = computed(() => {
@@ -339,6 +346,25 @@ const callWriteFunction = async () => {
   writeResult.value = null
   
   try {
+    // 自动授权逻辑
+    if (props.contractType === 'amm' && walletStore.address && props.poolInfo) {
+      const functionName = selectedWriteFunction.value.name
+      const params = writeFunctionParams.value
+
+      const spender = props.contractAddress
+      const tokenA = props.poolInfo.token0.address
+      const tokenB = props.poolInfo.token1.address
+
+      if (functionName === 'swapAForB' && params[0]) {
+        await contractInteractionService.checkAndApprove(tokenA, spender, params[0])
+      } else if (functionName === 'swapBForA' && params[0]) {
+        await contractInteractionService.checkAndApprove(tokenB, spender, params[0])
+      } else if (functionName === 'addLiquidity' && params[0] && params[1]) {
+        await contractInteractionService.checkAndApprove(tokenA, spender, params[0])
+        await contractInteractionService.checkAndApprove(tokenB, spender, params[1])
+      }
+    }
+
     const txResult = await contractInteractionService.sendTransaction({
       address: props.contractAddress,
       abi: abi.value,

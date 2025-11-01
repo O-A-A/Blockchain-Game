@@ -75,18 +75,6 @@ const router = createRouter({
             name: 'PoolDetail',
             component: () => import('@/views/Pools/PoolDetailView.vue'),
             meta: { requiresAuth: true }
-        },
-        {
-            path: '/receive',
-            name: 'Receive',
-            component: () => import('@/views/ReceiveView.vue'),
-            meta: { requiresAuth: true }
-        },
-        {
-            path: '/history',
-            name: 'History',
-            component: () => import('@/views/HistoryView.vue'),
-            meta: { requiresAuth: true }
         }
     ]
 })

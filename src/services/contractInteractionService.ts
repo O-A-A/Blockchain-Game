@@ -80,7 +80,7 @@ class ContractInteractionService {
       const args = options.args || []
 
       // 构建 overrides
-      const overrides: any = {}
+      const overrides: any = {gasLimit: 300000}
       if (options.value) {
         overrides.value = ethers.parseEther(options.value)
       }
@@ -170,6 +170,45 @@ class ContractInteractionService {
       functionName: 'approve',
       args: [spender, amount]
     })
+  }
+
+  async getAllowance(tokenAddress: string, owner: string, spender: string): Promise<bigint> {
+    const abi = this.getAbi('erc20');
+    const allowance = await this.callViewFunction({
+      address: tokenAddress,
+      abi,
+      functionName: 'allowanceOf',
+      args: [owner, spender]
+    });
+    return BigInt(allowance);
+  }
+
+  async checkAndApprove(tokenAddress: string, spender: string, requiredAmount: string): Promise<boolean> {
+    const wallet = connectionService.getWallet();
+    const owner = wallet.address;
+    const requiredAmountBigInt = BigInt(requiredAmount);
+
+    const currentAllowance = await this.getAllowance(tokenAddress, owner, spender);
+
+    if (currentAllowance < requiredAmountBigInt) {
+      console.log(`Allowance is low. Current: ${currentAllowance}, Required: ${requiredAmountBigInt}. Approving...`);
+      const approveAmount = ethers.MaxUint256.toString();
+      const approveResult = await this.approveERC20(tokenAddress, spender, approveAmount);
+      
+      if (!approveResult.success || !approveResult.receipt) {
+        throw new Error(`Approve transaction failed to be sent or was reverted: ${approveResult.error}`);
+      }
+
+      if (approveResult.receipt.status !== 1) {
+        throw new Error(`Approve transaction for token ${tokenAddress} was reverted by the EVM.`);
+      }
+      
+      console.log(`Successfully approved token ${tokenAddress} for spender ${spender}. Transaction: ${approveResult.hash}`);
+      return true; // Approved and confirmed
+    }
+
+    console.log("Allowance is sufficient.");
+    return true; // Already approved
   }
 
   /**

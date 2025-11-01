@@ -3,6 +3,7 @@ import { ethers } from 'ethers'
 import connectionService from './connectionService'
 import contractInteractionService from './contractInteractionService'
 import { useContractsStore } from '@/store/contracts'
+import { formatBalance } from '@/utils/formatters'
 
 export interface PoolInfo {
   address: string
@@ -193,13 +194,13 @@ class PoolService {
         name: this.uint256ToString(poolName),
         token0: token0Info,
         token1: token1Info,
-        reserve0: this.formatNumber(reserve0Raw),
-        reserve1: this.formatNumber(reserve1Raw),
+        reserve0: reserve0Raw,
+        reserve1: reserve1Raw,
         fee: `${feePercent}%`,
-        price: this.formatNumber(price),
-        userLpBalance: this.formatNumber(userLpBalanceFormatted),
+        price: formatBalance(price),
+        userLpBalance: formatBalance(userLpBalanceFormatted),
         userLpBalanceRaw: userLpBalance.toString(),
-        totalLpSupply: this.formatNumber(totalLpSupplyFormatted),
+        totalLpSupply: formatBalance(totalLpSupplyFormatted),
         totalLpSupplyRaw: totalLpSupply.toString()
       }
     } catch (error) {
@@ -405,33 +406,6 @@ class PoolService {
       if (reserve1Num === 0) return '0'
       
       return (reserve0Num / reserve1Num).toString()
-    } catch (error) {
-      return '0'
-    }
-  }
-
-  /**
-   * 格式化数字（添加千分位分隔符）
-   */
-  private formatNumber(value: string | number): string {
-    try {
-      const num = typeof value === 'string' ? parseFloat(value) : value
-      
-      if (isNaN(num)) return '0'
-      
-      // 如果数字太小，使用科学计数法
-      if (num > 0 && num < 0.000001) {
-        return num.toExponential(4)
-      }
-      
-      // 保留最多6位小数，并移除尾部的0
-      const formatted = num.toFixed(6).replace(/\.?0+$/, '')
-      
-      // 添加千分位分隔符
-      const parts = formatted.split('.')
-      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-      
-      return parts.join('.')
     } catch (error) {
       return '0'
     }

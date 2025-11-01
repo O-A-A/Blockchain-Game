@@ -6,7 +6,7 @@
         <!-- 账户概览卡片 -->
         <v-card class="mb-6 rounded-lg" elevation="1">
           <v-card-text class="pa-4">
-            <div class="text-overline text-medium-emphasis mb-1">总资产价值 (USD)</div>
+            <div class="text-overline text-medium-emphasis mb-1">原始代币数量</div>
             <div class="d-flex align-center">
               <h1 class="text-h5 font-weight-bold">${{ totalUsdValue }}</h1>
             </div>
@@ -44,15 +44,6 @@
                   </v-avatar>
                 </template>
                 <v-list-item-title class="font-weight-medium">接收</v-list-item-title>
-              </v-list-item>
-
-              <v-list-item to="/history" rounded="lg" color="primary">
-                <template v-slot:prepend>
-                  <v-avatar color="primary" variant="tonal" size="36">
-                    <v-icon>mdi-history</v-icon>
-                  </v-avatar>
-                </template>
-                <v-list-item-title class="font-weight-medium">历史</v-list-item-title>
               </v-list-item>
             </v-list>
           </v-card-text>
@@ -175,9 +166,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useWalletStore } from '@/store/wallet'
 import { useContractsStore } from '@/store/contracts'
 import contractInteractionService from '@/services/contractInteractionService'
 import poolService from '@/services/poolService'
@@ -185,7 +175,6 @@ import connectionService from '@/services/connectionService'
 import { formatAddress, formatBalance } from '@/utils/formatters'
 
 const router = useRouter()
-const walletStore = useWalletStore()
 const contractsStore = useContractsStore()
 
 const loading = ref(false)
@@ -209,23 +198,7 @@ const lpBalances = ref<Array<{
 // 使用统一的格式化工具函数（已从 utils/formatters 导入）
 
 // 计算总USD价值
-const totalUsdValue = computed(() => {
-  try {
-    let total = 0
-    
-    // 这里可以根据实际需求计算总价值
-    // 目前简化处理，只计算wBKC和E20C的价值
-    const wbkcBalance = parseFloat(walletStore.wbkcBalance) || 0
-    const e20cBalance = parseFloat(walletStore.e20cBalance) || 0
-    
-    total += wbkcBalance * 0.1 // wBKC 到 USD
-    total += e20cBalance * 0.01 // E20C 到 USD
-    
-    return total.toFixed(2)
-  } catch {
-    return '0.00'
-  }
-})
+const totalUsdValue = ref("0")
 
 // 刷新余额
 const refreshBalances = async () => {
@@ -239,6 +212,11 @@ const refreshBalances = async () => {
     if (!userAddress) {
       return
     }
+
+
+    const amount = await connectionService.getBalance(userAddress);
+      
+    totalUsdValue.value = formatBalance(amount)
 
     // 获取所有代币列表
     const allTokens = contractsStore.allTokens
