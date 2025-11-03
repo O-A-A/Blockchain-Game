@@ -317,7 +317,7 @@ const callViewFunction = async () => {
       address: props.contractAddress,
       abi: abi.value,
       functionName: selectedViewFunction.value.name,
-      args: viewFunctionParams.value.filter(p => p !== '')
+      args: viewFunctionParams.value // 保持所有参数，即使是空字符串
     })
     
     viewResult.value = {
@@ -369,7 +369,7 @@ const callWriteFunction = async () => {
       address: props.contractAddress,
       abi: abi.value,
       functionName: selectedWriteFunction.value.name,
-      args: writeFunctionParams.value.filter(p => p !== ''),
+      args: writeFunctionParams.value, // 保持所有参数，即使是空字符串
       value: ethValue.value || undefined
     })
     

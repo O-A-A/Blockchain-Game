@@ -125,10 +125,6 @@ onMounted(async () => {
               <v-icon size="small" class="mr-1">mdi-water</v-icon>
               流动性池
             </v-tab>
-            <v-tab v-if="walletStore.isLoggedIn" to="/send" class="text-body-2">
-              <v-icon size="small" class="mr-1">mdi-send</v-icon>
-              转账
-            </v-tab>
           </v-tabs>
         </div>
 
@@ -224,9 +220,6 @@ onMounted(async () => {
           rounded="lg" density="compact"></v-list-item>
 
         <v-list-item v-if="walletStore.isLoggedIn" title="流动性池" prepend-icon="mdi-water" to="/poollist" rounded="lg"
-          density="compact"></v-list-item>
-
-        <v-list-item v-if="walletStore.isLoggedIn" title="发送" prepend-icon="mdi-send" to="/send" rounded="lg"
           density="compact"></v-list-item>
 
         <v-list-item v-if="!walletStore.isLoggedIn" title="登录" prepend-icon="mdi-login" to="/login" rounded="lg"

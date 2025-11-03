@@ -27,25 +27,6 @@
           <v-card-text class="pa-4">
             <div class="text-subtitle-1 font-weight-bold mb-3">快捷操作</div>
 
-            <v-list density="compact">
-              <v-list-item to="/send" rounded="lg" class="mb-2" color="primary">
-                <template v-slot:prepend>
-                  <v-avatar color="primary" variant="tonal" size="36">
-                    <v-icon>mdi-send</v-icon>
-                  </v-avatar>
-                </template>
-                <v-list-item-title class="font-weight-medium">发送</v-list-item-title>
-              </v-list-item>
-
-              <v-list-item to="/receive" rounded="lg" class="mb-2" color="primary">
-                <template v-slot:prepend>
-                  <v-avatar color="primary" variant="tonal" size="36">
-                    <v-icon>mdi-qrcode</v-icon>
-                  </v-avatar>
-                </template>
-                <v-list-item-title class="font-weight-medium">接收</v-list-item-title>
-              </v-list-item>
-            </v-list>
           </v-card-text>
         </v-card>
       </v-col>
