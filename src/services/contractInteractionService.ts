@@ -80,7 +80,7 @@ class ContractInteractionService {
       const args = options.args || []
 
       // 构建 overrides
-      const overrides: any = {gasLimit: 300000}
+      const overrides: any = { gasLimit: 300000 }
       if (options.value) {
         overrides.value = ethers.parseEther(options.value)
       }
@@ -194,7 +194,7 @@ class ContractInteractionService {
       console.log(`Allowance is low. Current: ${currentAllowance}, Required: ${requiredAmountBigInt}. Approving...`);
       const approveAmount = ethers.MaxUint256.toString();
       const approveResult = await this.approveERC20(tokenAddress, spender, approveAmount);
-      
+
       if (!approveResult.success || !approveResult.receipt) {
         throw new Error(`Approve transaction failed to be sent or was reverted: ${approveResult.error}`);
       }
@@ -202,7 +202,7 @@ class ContractInteractionService {
       if (approveResult.receipt.status !== 1) {
         throw new Error(`Approve transaction for token ${tokenAddress} was reverted by the EVM.`);
       }
-      
+
       console.log(`Successfully approved token ${tokenAddress} for spender ${spender}. Transaction: ${approveResult.hash}`);
       return true; // Approved and confirmed
     }

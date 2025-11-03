@@ -72,7 +72,7 @@ class ContractDeployService {
       // 等待部署完成
       await contract.waitForDeployment()
       const contractAddress = await contract.getAddress()
-      
+
       if (!contractAddress) {
         throw new Error('部署失败：无法获取合约地址')
       }
@@ -82,14 +82,14 @@ class ContractDeployService {
       // 创建合约信息对象
       const provider = connectionService.getProvider()
       const receipt = await provider.getTransactionReceipt(deployTx.hash)
-      
+
       if (!receipt) {
         throw new Error('无法获取交易收据')
       }
 
       const contractInfo: ContractInfo = {
         address: contractAddress,
-        type: 0, 
+        type: 0,
         deployedBlock: receipt.blockNumber || 0,
         deployedTime: Date.now(),
         owner: wallet.address,
@@ -165,7 +165,7 @@ class ContractDeployService {
 
       const provider = connectionService.getProvider()
       const receipt = await provider.getTransactionReceipt(deployTx.hash)
-      
+
       if (!receipt) {
         throw new Error('无法获取交易收据')
       }
@@ -268,7 +268,7 @@ class ContractDeployService {
 
       const provider = connectionService.getProvider()
       const receipt = await provider.getTransactionReceipt(deployTx.hash)
-      
+
       if (!receipt) {
         throw new Error('无法获取交易收据')
       }
@@ -340,16 +340,16 @@ class ContractDeployService {
 
     // 否则将字符串编码为 bytes32 格式的 uint256
     const bytes = ethers.toUtf8Bytes(value.substring(0, 31)) // 最多31字节，留一字节给长度
-    
+
     // 填充到32字节
     const paddedBytes = new Uint8Array(32)
     paddedBytes.set(bytes)
-    
+
     // 转换为 hex 字符串，然后转为 BigInt
     const hexStr = ethers.hexlify(paddedBytes)
     return BigInt(hexStr)
   }
-  
+
   /**
    * 将 uint256 转换回字符串
    * 注意：如果合约直接存储的是字符串（ethers.js 自动转换），则直接返回 toString()
@@ -360,27 +360,27 @@ class ContractDeployService {
       if (typeof value === 'string' && !value.startsWith('0x')) {
         return value
       }
-      
+
       // 如果是数字或十六进制，尝试转换
       const numValue = typeof value === 'bigint' ? value : BigInt(value)
-      
+
       // 如果数值很小（可能是直接存储的字符串），直接返回字符串形式
       if (numValue < BigInt('0x10000000000000000')) { // 小于一个合理的 bytes32 值
         return numValue.toString()
       }
-      
+
       // 转为 hex string
       const hexStr = '0x' + numValue.toString(16).padStart(64, '0')
-      
+
       // 转为 bytes
       const bytes = ethers.getBytes(hexStr)
-      
+
       // 移除尾部的0
       let endIndex = bytes.length
       while (endIndex > 0 && bytes[endIndex - 1] === 0) {
         endIndex--
       }
-      
+
       // 转为字符串
       if (endIndex === 0) return ''
       const trimmedBytes = bytes.slice(0, endIndex)

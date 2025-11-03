@@ -10,7 +10,7 @@ export const walletService = {
   createWallet(): WalletInfo {
     try {
       const wallet = ethers.Wallet.createRandom()
-      
+
       const walletWithMnemonic = wallet as ethers.HDNodeWallet
       return {
         address: wallet.address,
@@ -32,7 +32,7 @@ export const walletService = {
       }
 
       const wallet = new ethers.Wallet(privateKey)
-      
+
       return {
         address: wallet.address,
         privateKey: wallet.privateKey
@@ -48,7 +48,7 @@ export const walletService = {
   recoverFromMnemonic(mnemonic: string): WalletInfo {
     try {
       const wallet = ethers.Wallet.fromPhrase(mnemonic)
-      
+
       const walletWithMnemonic = wallet as ethers.HDNodeWallet
       return {
         address: wallet.address,
@@ -66,9 +66,9 @@ export const walletService = {
   async encryptAndSave(privateKey: string, password: string): Promise<void> {
     try {
       const wallet = new ethers.Wallet(privateKey)
-      
+
       const encryptedJson = await wallet.encrypt(password)
-      
+
       storageService.saveEncryptedKeystore(encryptedJson)
       storageService.saveWalletAddress(wallet.address)
     } catch (error: any) {
@@ -86,7 +86,7 @@ export const walletService = {
         return null
       }
       const wallet = await ethers.Wallet.fromEncryptedJson(encryptedJson, password)
-      
+
       const walletWithMnemonic = wallet as ethers.HDNodeWallet
       return {
         address: wallet.address,
@@ -169,7 +169,7 @@ export const walletService = {
       const wallet = await ethers.Wallet.fromEncryptedJson(keystoreJson, password)
       storageService.saveEncryptedKeystore(keystoreJson)
       storageService.saveWalletAddress(wallet.address)
-      
+
       const walletWithMnemonic = wallet as ethers.HDNodeWallet
       return {
         address: wallet.address,

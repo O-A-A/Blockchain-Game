@@ -19,16 +19,16 @@ class ConnectionService {
         try {
             // 创建provider
             this.provider = new ethers.JsonRpcProvider(nodeUrl)
-            
+
             // 测试连接
             await this.provider.getBlockNumber()
-            
+
             // 创建wallet
             this.wallet = new ethers.Wallet(privateKey, this.provider)
-            
+
             // 保存连接信息
             this.nodeUrl = nodeUrl
-            
+
             console.log('成功连接到节点:', nodeUrl)
             console.log('钱包地址:', this.wallet.address)
         } catch (error) {
@@ -45,7 +45,7 @@ class ConnectionService {
         this.provider = null
         this.wallet = null
         this.nodeUrl = ''
-        
+
         // 清除会话存储
         sessionStorage.removeItem('currentNodeUrl')
         sessionStorage.removeItem('currentPrivateKey')
@@ -102,10 +102,10 @@ class ConnectionService {
             if (this.isConnected()) {
                 return true
             }
-            
+
             const savedNodeUrl = sessionStorage.getItem('currentNodeUrl')
             const savedPrivateKey = sessionStorage.getItem('currentPrivateKey')
-            
+
             if (savedNodeUrl && savedPrivateKey) {
                 await this.connect(savedNodeUrl, savedPrivateKey)
                 return true
@@ -116,7 +116,7 @@ class ConnectionService {
             return false
         }
     }
-    
+
     /**
      * 确保连接可用（如果未连接则尝试恢复）
      */
@@ -124,7 +124,7 @@ class ConnectionService {
         if (this.isConnected()) {
             return
         }
-        
+
         const restored = await this.restoreFromSession()
         if (!restored) {
             throw new Error('未连接到区块链节点，请重新登录')
@@ -181,9 +181,9 @@ class ConnectionService {
      * 发送合约交易
      */
     async sendContractTransaction(
-        address: string, 
-        abi: any, 
-        method: string, 
+        address: string,
+        abi: any,
+        method: string,
         ...params: any[]
     ): Promise<ethers.TransactionResponse> {
         const contract = this.getContract(address, abi)
