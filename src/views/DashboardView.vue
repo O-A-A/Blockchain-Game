@@ -8,7 +8,7 @@
           <v-card-text class="pa-4">
             <div class="text-overline text-medium-emphasis mb-1">原始代币数量</div>
             <div class="d-flex align-center">
-              <h1 class="text-h5 font-weight-bold">${{ totalUsdValue }}</h1>
+              <h1 class="text-h5 font-weight-bold">${{ "ANY" }}</h1>
             </div>
 
             <!-- 刷新按钮和最后更新时间 -->
@@ -176,10 +176,6 @@ const lpBalances = ref<Array<{
   sharePercentage: string
 }>>([])
 
-// 使用统一的格式化工具函数（已从 utils/formatters 导入）
-
-// 计算总USD价值
-const totalUsdValue = ref("0")
 
 // 刷新余额
 const refreshBalances = async () => {
@@ -193,11 +189,6 @@ const refreshBalances = async () => {
     if (!userAddress) {
       return
     }
-
-
-    const amount = await connectionService.getBalance(userAddress);
-      
-    totalUsdValue.value = formatBalance(amount)
 
     // 获取所有代币列表
     const allTokens = contractsStore.allTokens

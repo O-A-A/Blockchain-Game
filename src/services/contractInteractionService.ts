@@ -152,16 +152,6 @@ class ContractInteractionService {
     return balance.toString()
   }
 
-  async transferERC20(tokenAddress: string, to: string, amount: string): Promise<TransactionResult> {
-    const abi = this.getAbi('erc20')
-    return await this.sendTransaction({
-      address: tokenAddress,
-      abi,
-      functionName: 'transfer',
-      args: [to, amount]
-    })
-  }
-
   async approveERC20(tokenAddress: string, spender: string, amount: string): Promise<TransactionResult> {
     const abi = this.getAbi('erc20')
     return await this.sendTransaction({

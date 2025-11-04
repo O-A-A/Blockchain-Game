@@ -47,9 +47,9 @@ class ConnectionService {
         this.nodeUrl = ''
 
         // 清除会话存储
-        sessionStorage.removeItem('currentNodeUrl')
-        sessionStorage.removeItem('currentPrivateKey')
-        sessionStorage.removeItem('currentAddress')
+        localStorage.removeItem('currentNodeUrl')
+        localStorage.removeItem('currentPrivateKey')
+        localStorage.removeItem('currentAddress')
     }
 
     /**

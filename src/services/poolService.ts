@@ -370,21 +370,6 @@ class PoolService {
   }
 
   /**
-   * 授权代币给池子
-   */
-  async approveToken(
-    tokenAddress: string,
-    spenderAddress: string,
-    amount: string
-  ) {
-    try {
-      return await contractInteractionService.approveERC20(tokenAddress, spenderAddress, amount)
-    } catch (error) {
-      throw error
-    }
-  }
-
-  /**
    * 获取代币余额
    */
   async getTokenBalance(tokenAddress: string, accountAddress: string): Promise<string> {
