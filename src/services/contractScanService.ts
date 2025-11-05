@@ -349,38 +349,6 @@ class ContractScanService {
 
     return await this.scanContracts(lastBlock + 1)
   }
-
-  /**
-   * 重新扫描所有区块
-   * 清空现有数据并从头开始扫描
-   */
-  async rescanAll(): Promise<ContractInfo[]> {
-    const contractsStore = useContractsStore()
-    contractsStore.clearAllContracts()
-
-    return await this.scanContracts(0)
-  }
-
-  /**
-   * 单独识别一个合约
-   * 用于用户手动添加合约地址
-   */
-  async identifyContract(address: string): Promise<ContractInfo | null> {
-    try {
-      const provider = connectionService.getProvider()
-
-      // 获取合约部署信息
-      const code = await provider.getCode(address)
-      if (code === '0x') {
-        throw new Error('该地址不是合约地址')
-      }
-
-      // 识别并读取合约信息
-      return await this.identifyAndReadContract(address, 0, Date.now())
-    } catch (error) {
-      throw error
-    }
-  }
 }
 
 // 导出单例

@@ -127,13 +127,13 @@ class ContractInteractionService {
     const contractType = results[4].status === 'fulfilled' ? results[4].value : BigInt(0)
 
     const name = this.uint256ToString(coinName) || 'NaN'
-    const symbol = this.deriveSymbolFromName(name)
+    const symbol = "None"
 
     return {
       address,
       name,
       symbol,
-      decimals: 18, // 默认18位精度
+      decimals: 18,
       totalSupply: totalSupply.toString(),
       url: this.uint256ToString(imgUrl) || '',
       owner,
@@ -152,7 +152,7 @@ class ContractInteractionService {
     return balance.toString()
   }
 
-  async approveERC20(tokenAddress: string, spender: string, amount: string): Promise<TransactionResult> {
+  async approveToken(tokenAddress: string, spender: string, amount: string): Promise<TransactionResult> {
     const abi = this.getAbi('erc20')
     return await this.sendTransaction({
       address: tokenAddress,
@@ -163,10 +163,10 @@ class ContractInteractionService {
   }
 
   async getAllowance(tokenAddress: string, owner: string, spender: string): Promise<bigint> {
-    const abi = this.getAbi('erc20');
+    const allowanceABI = this.getAbi('erc20');
     const allowance = await this.callViewFunction({
       address: tokenAddress,
-      abi,
+      abi: allowanceABI,
       functionName: 'allowanceOf',
       args: [owner, spender]
     });
@@ -183,7 +183,7 @@ class ContractInteractionService {
     if (currentAllowance < requiredAmountBigInt) {
       console.log(`Allowance is low. Current: ${currentAllowance}, Required: ${requiredAmountBigInt}. Approving...`);
       const approveAmount = ethers.MaxUint256.toString();
-      const approveResult = await this.approveERC20(tokenAddress, spender, approveAmount);
+      const approveResult = await this.approveToken(tokenAddress, spender, approveAmount);
 
       if (!approveResult.success || !approveResult.receipt) {
         throw new Error(`Approve transaction failed to be sent or was reverted: ${approveResult.error}`);
@@ -236,27 +236,6 @@ class ContractInteractionService {
     }
   }
 
-  async mintWBKC(address: string, ethAmount: string): Promise<TransactionResult> {
-    const abi = this.getAbi('wbkc')
-    return await this.sendTransaction({
-      address,
-      abi,
-      functionName: 'mintToken',
-      args: [],
-      value: ethAmount // 附带ETH
-    })
-  }
-
-  async burnWBKC(address: string, amount: string): Promise<TransactionResult> {
-    const abi = this.getAbi('wbkc')
-    return await this.sendTransaction({
-      address,
-      abi,
-      functionName: 'burnToken',
-      args: [amount]
-    })
-  }
-
   /**
    * AMM 池子相关操作
    */
@@ -284,82 +263,6 @@ class ContractInteractionService {
       url: this.uint256ToString(imgUrl),
       contractType: Number(contractType)
     }
-  }
-
-  async addLiquidity(
-    poolAddress: string,
-    amountA: string,
-    amountB: string
-  ): Promise<TransactionResult> {
-    const abi = this.getAbi('amm')
-    return await this.sendTransaction({
-      address: poolAddress,
-      abi,
-      functionName: 'addLiquidity',
-      args: [amountA, amountB]
-    })
-  }
-
-  async removeLiquidity(poolAddress: string, liquidity: string): Promise<TransactionResult> {
-    const abi = this.getAbi('amm')
-    return await this.sendTransaction({
-      address: poolAddress,
-      abi,
-      functionName: 'removeLiquidity',
-      args: [liquidity]
-    })
-  }
-
-  async swapAForB(poolAddress: string, amountA: string): Promise<TransactionResult> {
-    const abi = this.getAbi('amm')
-    return await this.sendTransaction({
-      address: poolAddress,
-      abi,
-      functionName: 'swapAForB',
-      args: [amountA]
-    })
-  }
-
-  async swapBForA(poolAddress: string, amountB: string): Promise<TransactionResult> {
-    const abi = this.getAbi('amm')
-    return await this.sendTransaction({
-      address: poolAddress,
-      abi,
-      functionName: 'swapBForA',
-      args: [amountB]
-    })
-  }
-
-  async getAmountBOut(poolAddress: string, amountA: string): Promise<string> {
-    const abi = this.getAbi('amm')
-    const result = await this.callViewFunction({
-      address: poolAddress,
-      abi,
-      functionName: 'getAmountBOut',
-      args: [amountA]
-    })
-    return result.toString()
-  }
-
-  async getAmountAOut(poolAddress: string, amountB: string): Promise<string> {
-    const abi = this.getAbi('amm')
-    const result = await this.callViewFunction({
-      address: poolAddress,
-      abi,
-      functionName: 'getAmountAOut',
-      args: [amountB]
-    })
-    return result.toString()
-  }
-
-  /**
-   * 从名称派生代币符号
-   */
-  private deriveSymbolFromName(name: string): string {
-    // 简单实现：取前几个字符并转大写
-    if (!name || name.length === 0) return 'UNKNOWN'
-    if (name.length <= 6) return name.toUpperCase()
-    return name.substring(0, 6).toUpperCase()
   }
 
   /**

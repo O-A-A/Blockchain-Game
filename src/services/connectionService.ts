@@ -80,13 +80,6 @@ class ConnectionService {
     }
 
     /**
-     * 获取当前节点URL
-     */
-    getNodeUrl(): string {
-        return this.nodeUrl
-    }
-
-    /**
      * 获取当前钱包地址
      */
     getAddress(): string {
@@ -137,28 +130,6 @@ class ConnectionService {
     async getBlockNumber(): Promise<number> {
         const provider = this.getProvider()
         return await provider.getBlockNumber()
-    }
-
-    /**
-     * 获取账户余额（ETH）
-     */
-    async getBalance(address?: string): Promise<string> {
-        const provider = this.getProvider()
-        const addr = address || this.getAddress()
-        const balance = await provider.getBalance(addr)
-        return ethers.formatEther(balance)
-    }
-
-    /**
-     * 发送交易
-     */
-    async sendTransaction(to: string, value: string): Promise<ethers.TransactionResponse> {
-        const wallet = this.getWallet()
-        const tx = {
-            to,
-            value: ethers.parseEther(value)
-        }
-        return await wallet.sendTransaction(tx)
     }
 
     /**

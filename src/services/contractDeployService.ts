@@ -325,32 +325,6 @@ class ContractDeployService {
   }
 
   /**
-   * 将参数转换为 uint256
-   * 如果是纯数字字符串，直接转换；否则编码为 bytes32
-   */
-  private toUint256Param(value: string): bigint | string {
-    if (!value || value.trim().length === 0) {
-      return BigInt(0)
-    }
-
-    // 如果是纯数字，直接返回让 ethers.js 处理
-    if (/^\d+$/.test(value.trim())) {
-      return value
-    }
-
-    // 否则将字符串编码为 bytes32 格式的 uint256
-    const bytes = ethers.toUtf8Bytes(value.substring(0, 31)) // 最多31字节，留一字节给长度
-
-    // 填充到32字节
-    const paddedBytes = new Uint8Array(32)
-    paddedBytes.set(bytes)
-
-    // 转换为 hex 字符串，然后转为 BigInt
-    const hexStr = ethers.hexlify(paddedBytes)
-    return BigInt(hexStr)
-  }
-
-  /**
    * 将 uint256 转换回字符串
    * 注意：如果合约直接存储的是字符串（ethers.js 自动转换），则直接返回 toString()
    */
@@ -388,51 +362,6 @@ class ContractDeployService {
     } catch (error) {
       // 失败时返回原始值的字符串形式
       return String(value)
-    }
-  }
-
-  /**
-   * 从名称派生符号
-   */
-  private deriveSymbol(name: string): string {
-    if (!name) return 'TKN'
-
-    // 取首字母大写
-    const words = name.split(/\s+/)
-    if (words.length > 1) {
-      return words
-        .map(w => w.charAt(0))
-        .join('')
-        .toUpperCase()
-        .substring(0, 6)
-    }
-
-    return name.substring(0, 6).toUpperCase()
-  }
-
-  /**
-   * 估算部署gas费用
-   * @param contractType 合约类型
-   */
-  async estimateDeployGas(contractType: 'erc20' | 'wbkc' | 'amm'): Promise<string> {
-    try {
-      const provider = connectionService.getProvider()
-      const feeData = await provider.getFeeData()
-
-      // 估算的gas消耗量（根据合约复杂度）
-      const gasEstimates = {
-        erc20: 1500000, // 1.5M gas
-        wbkc: 1200000, // 1.2M gas
-        amm: 2500000 // 2.5M gas
-      }
-
-      const gasLimit = BigInt(gasEstimates[contractType])
-      const gasPrice = feeData.gasPrice || BigInt(0)
-
-      const gasCost = gasLimit * gasPrice
-      return ethers.formatEther(gasCost)
-    } catch (error) {
-      return '0'
     }
   }
 }
