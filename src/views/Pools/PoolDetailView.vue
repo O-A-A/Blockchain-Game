@@ -264,8 +264,7 @@ const loadPoolInfo = async () => {
     }
 
     // 获取用户地址
-    const wallet = connectionService.getWallet()
-    userAddress.value = wallet.address
+    userAddress.value = connectionService.getAddress()
 
     // 获取池子信息
     pool.value = await poolService.getPoolInfo(poolAddress, userAddress.value)

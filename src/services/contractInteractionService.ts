@@ -47,8 +47,8 @@ class ContractInteractionService {
    * 创建合约实例
    */
   getContract(address: string, abi: any): ethers.Contract {
-    const wallet = connectionService.getWallet()
-    return new ethers.Contract(address, abi, wallet)
+    const signer = connectionService.getSigner()
+    return new ethers.Contract(address, abi, signer)
   }
 
   /**
@@ -172,8 +172,8 @@ class ContractInteractionService {
   }
 
   async checkAndApprove(tokenAddress: string, spender: string, requiredAmount: string): Promise<boolean> {
-    const wallet = connectionService.getWallet();
-    const owner = wallet.address;
+    const signer = connectionService.getSigner();
+    const owner = await signer.getAddress();
     const requiredAmountBigInt = BigInt(requiredAmount);
 
     const currentAllowance = await this.getAllowance(tokenAddress, owner, spender);
@@ -229,35 +229,6 @@ class ContractInteractionService {
       totalSupply: totalSupply.toString(),
       url: this.uint256ToString(imgUrl) || '',
       owner,
-      contractType: Number(contractType)
-    }
-  }
-
-  /**
-   * AMM 池子相关操作
-   */
-  async getAMMInfo(address: string) {
-    const abi = this.getAbi('amm')
-
-    const [poolName, tokenA, tokenB, poolInfo, imgUrl, contractType] = await Promise.all([
-      this.callViewFunction({ address, abi, functionName: 'POOL_NAME' }),
-      this.callViewFunction({ address, abi, functionName: 'tokenAAddress' }),
-      this.callViewFunction({ address, abi, functionName: 'tokenBAddress' }),
-      this.callViewFunction({ address, abi, functionName: 'getPoolInfo' }),
-      this.callViewFunction({ address, abi, functionName: 'pool_img_url' }),
-      this.callViewFunction({ address, abi, functionName: 'contract_type' })
-    ])
-
-    // poolInfo 返回: [tokenABalance, tokenBBalance, totalLPSupply, k]
-    return {
-      address,
-      poolName: this.uint256ToString(poolName),
-      tokenA,
-      tokenB,
-      reserveA: poolInfo[0].toString(),
-      reserveB: poolInfo[1].toString(),
-      totalLPSupply: poolInfo[2].toString(),
-      url: this.uint256ToString(imgUrl),
       contractType: Number(contractType)
     }
   }

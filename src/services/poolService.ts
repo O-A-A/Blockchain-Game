@@ -81,8 +81,7 @@ class PoolService {
 
       // 如果没有提供用户地址，使用当前钱包地址
       if (!userAddress) {
-        const wallet = connectionService.getWallet()
-        userAddress = wallet.address
+        userAddress = connectionService.getAddress()
       }
 
       // 并行获取池子基本信息（使用错误处理）

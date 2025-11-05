@@ -182,8 +182,7 @@ const refreshBalances = async () => {
   
   try {
     // 获取用户地址
-    const wallet = connectionService.getWallet()
-    const userAddress = wallet.address
+    const userAddress = connectionService.getAddress()
     
     if (!userAddress) {
       return

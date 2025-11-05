@@ -1,131 +1,192 @@
 // connectionService.ts - 管理区块链节点连接
-import { ethers } from 'ethers'
+import { ethers, type BrowserProvider, type JsonRpcSigner } from 'ethers'
 
 /**
  * 区块链连接服务
- * 管理节点URL、provider和wallet实例
+ * 管理与浏览器钱包（如MetaMask）的连接
  */
 class ConnectionService {
-    private provider: ethers.JsonRpcProvider | null = null
-    private wallet: ethers.Wallet | null = null
+  private provider: BrowserProvider | null = null
+  private signer: JsonRpcSigner | null = null
+  private account: string | null = null
 
-    /**
-     * 连接到节点
-     * @param nodeUrl 节点RPC地址
-     * @param privateKey 私钥
-     */
-    async connect(nodeUrl: string, privateKey: string): Promise<void> {
-        try {
-            // 创建provider
-            this.provider = new ethers.JsonRpcProvider(nodeUrl)
-
-            // 测试连接
-            await this.provider.getBlockNumber()
-
-            // 创建wallet
-            this.wallet = new ethers.Wallet(privateKey, this.provider)
-
-            console.log('成功连接到节点:', nodeUrl)
-            console.log('钱包地址:', this.wallet.address)
-        } catch (error) {
-            this.provider = null
-            this.wallet = null
-            throw new Error(`连接节点失败: ${error instanceof Error ? error.message : '未知错误'}`)
+  constructor() {
+    // 监听账户变化
+    if (typeof window.ethereum !== 'undefined') {
+      window.ethereum.on('accountsChanged', (accounts: string[]) => {
+        if (accounts.length > 0) {
+          this.handleAccountsChanged(accounts)
+        } else {
+          // 用户断开连接
+          this.disconnect()
         }
+      })
+    }
+  }
+
+  private async handleAccountsChanged(accounts: string[]) {
+    this.account = accounts[0]
+    if (this.provider) {
+      this.signer = await this.provider.getSigner()
+    }
+    // 可以选择性地发出事件，通知应用账户已更改
+    console.log('钱包地址已切换:', this.account)
+    // 更新本地存储
+    sessionStorage.setItem('currentAddress', this.account)
+    // 刷新页面以重新加载状态
+    window.location.reload()
+  }
+
+  /**
+   * 连接到浏览器钱包
+   */
+  async connect(): Promise<void> {
+    if (typeof window.ethereum === 'undefined') {
+      throw new Error('未检测到MetaMask，请安装MetaMask插件')
     }
 
-    /**
-     * 断开连接
-     */
-    disconnect(): void {
-        this.provider = null
-        this.wallet = null
+    try {
+      // 创建provider
+      this.provider = new ethers.BrowserProvider(window.ethereum)
 
-        // 清除会话存储
-        localStorage.removeItem('currentNodeUrl')
-        localStorage.removeItem('currentPrivateKey')
-        localStorage.removeItem('currentAddress')
+      // 请求用户授权
+      const accounts = await this.provider.send('eth_requestAccounts', [])
+      if (accounts.length === 0) {
+        throw new Error('用户拒绝了连接请求')
+      }
+      this.account = accounts[0]
+
+      // 获取signer
+      this.signer = await this.provider.getSigner()
+
+      console.log('成功连接到MetaMask')
+      console.log('钱包地址:', this.account)
+
+      // 保存连接状态
+      if (this.account) {
+        sessionStorage.setItem('currentAddress', this.account)
+      }
+    } catch (error) {
+      this.disconnect()
+      throw new Error(`连接钱包失败: ${error instanceof Error ? error.message : '未知错误'}`)
+    }
+  }
+
+  /**
+   * 断开连接
+   */
+  disconnect(): void {
+    this.provider = null
+    this.signer = null
+    this.account = null
+
+    // 清除会话存储
+    sessionStorage.removeItem('currentAddress')
+    console.log('已断开连接')
+  }
+
+  /**
+   * 检查是否已连接
+   */
+  isConnected(): boolean {
+    return this.provider !== null && this.signer !== null && this.account !== null
+  }
+
+  /**
+   * 获取Provider实例
+   */
+  getProvider(): BrowserProvider {
+    if (!this.provider) {
+      throw new Error('未连接到钱包，请先调用connect()')
+    }
+    return this.provider
+  }
+
+  /**
+   * 获取Signer实例 (替代旧的getWallet)
+   */
+  getSigner(): JsonRpcSigner {
+    if (!this.signer) {
+      throw new Error('钱包未初始化或未连接，请先调用connect()')
+    }
+    return this.signer
+  }
+
+  /**
+   * 获取当前钱包地址
+   */
+  getAddress(): string {
+    return this.account || ''
+  }
+
+  /**
+   * 从会话存储恢复连接
+   */
+  async restoreFromSession(): Promise<boolean> {
+    if (this.isConnected()) {
+      return true
     }
 
-    /**
-     * 检查是否已连接
-     */
-    isConnected(): boolean {
-        return this.provider !== null && this.wallet !== null
+    if (typeof window.ethereum === 'undefined') {
+      return false
     }
 
-    /**
-     * 获取Provider实例
-     */
-    getProvider(): ethers.JsonRpcProvider {
-        if (!this.provider) {
-            throw new Error('未连接到节点，请先调用connect()')
-        }
-        return this.provider
+    try {
+      const savedAddress = sessionStorage.getItem('currentAddress')
+      if (!savedAddress) {
+        return false
+      }
+
+      this.provider = new ethers.BrowserProvider(window.ethereum)
+      const accounts = await this.provider.listAccounts()
+
+      // 检查已保存的地址是否仍在MetaMask的账户列表中
+      const accountIsConnected = accounts.some(
+        (acc) => acc.address.toLowerCase() === savedAddress.toLowerCase()
+      )
+
+      if (accountIsConnected) {
+        this.account = savedAddress
+        this.signer = await this.provider.getSigner()
+        console.log('从会话恢复连接成功:', this.account)
+        return true
+      } else {
+        this.disconnect()
+        return false
+      }
+    } catch (error) {
+      console.error('从会话恢复连接失败:', error)
+      this.disconnect()
+      return false
+    }
+  }
+
+  /**
+   * 确保连接可用（如果未连接则尝试恢复）
+   */
+  async ensureConnected(): Promise<void> {
+    if (this.isConnected()) {
+      return
     }
 
-    /**
-     * 获取Wallet实例
-     */
-    getWallet(): ethers.Wallet {
-        if (!this.wallet) {
-            throw new Error('钱包未初始化，请先调用connect()')
-        }
-        return this.wallet
+    const restored = await this.restoreFromSession()
+    if (!restored) {
+      // 如果无法从会话恢复，可以尝试发起新的连接请求
+      // 或者抛出错误，让UI引导用户点击“连接钱包”
+      await this.connect()
+      if (!this.isConnected()) {
+        throw new Error('未连接到钱包，请连接您的MetaMask钱包')
+      }
     }
+  }
 
-    /**
-     * 获取当前钱包地址
-     */
-    getAddress(): string {
-        return this.wallet?.address || ''
-    }
-
-    /**
-     * 从会话存储恢复连接
-     */
-    async restoreFromSession(): Promise<boolean> {
-        try {
-            // 如果已经连接，直接返回true
-            if (this.isConnected()) {
-                return true
-            }
-
-            const savedNodeUrl = sessionStorage.getItem('currentNodeUrl')
-            const savedPrivateKey = sessionStorage.getItem('currentPrivateKey')
-
-            if (savedNodeUrl && savedPrivateKey) {
-                await this.connect(savedNodeUrl, savedPrivateKey)
-                return true
-            }
-            return false
-        } catch (error) {
-            console.error('从会话恢复连接失败:', error)
-            return false
-        }
-    }
-
-    /**
-     * 确保连接可用（如果未连接则尝试恢复）
-     */
-    async ensureConnected(): Promise<void> {
-        if (this.isConnected()) {
-            return
-        }
-
-        const restored = await this.restoreFromSession()
-        if (!restored) {
-            throw new Error('未连接到区块链节点，请重新登录')
-        }
-    }
-
-    /**
-     * 获取区块号
-     */
-    async getBlockNumber(): Promise<number> {
-        const provider = this.getProvider()
-        return await provider.getBlockNumber()
-    }
+  /**
+   * 获取区块号
+   */
+  async getBlockNumber(): Promise<number> {
+    const provider = this.getProvider()
+    return await provider.getBlockNumber()
+  }
 }
 
 // 导出单例实例

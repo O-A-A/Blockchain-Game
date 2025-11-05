@@ -29,16 +29,15 @@ class ContractDeployService {
     onProgress?: (stage: string) => void
   ): Promise<DeployResult> {
     try {
-      // ✅ 确保已连接，如果未连接则尝试从 sessionStorage 恢复
       onProgress?.('检查连接状态...')
       await connectionService.ensureConnected()
 
       onProgress?.('准备部署参数...')
 
-      const wallet = connectionService.getWallet()
+      const signer = connectionService.getSigner()
 
-      // ✅ 检查 wallet 是否为 null
-      if (!wallet) {
+      // ✅ 检查 signer 是否为 null
+      if (!signer) {
         throw new Error('无法获取钱包实例，请重新登录')
       }
 
@@ -55,7 +54,7 @@ class ContractDeployService {
       onProgress?.('创建合约工厂...')
 
       // 创建合约工厂
-      const factory = new ethers.ContractFactory(erc20Abi, bytecode, wallet)
+      const factory = new ethers.ContractFactory(erc20Abi, bytecode, signer)
 
       onProgress?.('发送部署交易...')
 
@@ -86,13 +85,13 @@ class ContractDeployService {
       if (!receipt) {
         throw new Error('无法获取交易收据')
       }
-
+      const ownerAddress = await signer.getAddress()
       const contractInfo: ContractInfo = {
         address: contractAddress,
         type: 0,
         deployedBlock: receipt.blockNumber || 0,
         deployedTime: Date.now(),
-        owner: wallet.address,
+        owner: ownerAddress,
         name: params.name,
         totalSupply: params.totalSupply,
         imgUrl: params.imgUrl || 0,
@@ -128,13 +127,11 @@ class ContractDeployService {
     onProgress?: (stage: string) => void
   ): Promise<DeployResult> {
     try {
-      if (!connectionService.isConnected()) {
-        throw new Error('未连接到区块链节点')
-      }
+      await connectionService.ensureConnected()
 
       onProgress?.('准备部署参数...')
 
-      const wallet = connectionService.getWallet()
+      const signer = connectionService.getSigner()
       const contractsStore = useContractsStore()
 
       // 加载bytecode
@@ -146,7 +143,7 @@ class ContractDeployService {
 
       onProgress?.('创建合约工厂...')
 
-      const factory = new ethers.ContractFactory(wbkcAbi, bytecode, wallet)
+      const factory = new ethers.ContractFactory(wbkcAbi, bytecode, signer)
 
       onProgress?.('发送部署交易...')
 
@@ -173,16 +170,17 @@ class ContractDeployService {
       // 获取总供应量
       const deployedContract = new ethers.Contract(contractAddress, wbkcAbi, provider)
       const totalSupply = await deployedContract.totalSupply()
+      const ownerAddress = await signer.getAddress()
 
       const contractInfo: ContractInfo = {
         address: contractAddress,
         type: 1, // WBKC
         deployedBlock: receipt.blockNumber || 0,
         deployedTime: Date.now(),
-        owner: wallet.address,
+        owner: ownerAddress,
         name: params.name,
         imgUrl: params.imgUrl || 0,
-        totalSupply: totalSupply.toString(),
+        totalSupply: totalSupply.toString()
       }
 
       contractsStore.addContract(contractInfo)
@@ -214,9 +212,7 @@ class ContractDeployService {
     onProgress?: (stage: string) => void
   ): Promise<DeployResult> {
     try {
-      if (!connectionService.isConnected()) {
-        throw new Error('未连接到区块链节点')
-      }
+      await connectionService.ensureConnected()
 
       onProgress?.('验证代币地址...')
 
@@ -231,7 +227,7 @@ class ContractDeployService {
 
       onProgress?.('准备部署参数...')
 
-      const wallet = connectionService.getWallet()
+      const signer = connectionService.getSigner()
       const contractsStore = useContractsStore()
 
       // 加载bytecode
@@ -243,7 +239,7 @@ class ContractDeployService {
 
       onProgress?.('创建合约工厂...')
 
-      const factory = new ethers.ContractFactory(ammAbi, bytecode, wallet)
+      const factory = new ethers.ContractFactory(ammAbi, bytecode, signer)
 
       onProgress?.('发送部署交易...')
 
@@ -272,13 +268,14 @@ class ContractDeployService {
       if (!receipt) {
         throw new Error('无法获取交易收据')
       }
+      const ownerAddress = await signer.getAddress()
 
       const contractInfo: ContractInfo = {
         address: contractAddress,
         type: 2, // AMM
         deployedBlock: receipt.blockNumber || 0,
         deployedTime: Date.now(),
-        owner: wallet.address,
+        owner: ownerAddress,
         name: params.poolName,
         imgUrl: params.imgUrl || 0,
         tokenA: params.tokenA,

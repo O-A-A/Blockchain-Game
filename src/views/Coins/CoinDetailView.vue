@@ -197,8 +197,7 @@ const loadTokenInfo = async () => {
     }
 
     // 获取用户地址
-    const wallet = connectionService.getWallet()
-    userAddress.value = wallet.address
+    userAddress.value = connectionService.getAddress()
 
     // 从 store 获取合约类型（所有合约都已扫描并存储）
     const storedContract = contractsStore.getContractByAddress(tokenAddress)
