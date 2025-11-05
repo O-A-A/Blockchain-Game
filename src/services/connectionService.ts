@@ -8,7 +8,6 @@ import { ethers } from 'ethers'
 class ConnectionService {
     private provider: ethers.JsonRpcProvider | null = null
     private wallet: ethers.Wallet | null = null
-    private nodeUrl: string = ''
 
     /**
      * 连接到节点
@@ -26,9 +25,6 @@ class ConnectionService {
             // 创建wallet
             this.wallet = new ethers.Wallet(privateKey, this.provider)
 
-            // 保存连接信息
-            this.nodeUrl = nodeUrl
-
             console.log('成功连接到节点:', nodeUrl)
             console.log('钱包地址:', this.wallet.address)
         } catch (error) {
@@ -44,7 +40,6 @@ class ConnectionService {
     disconnect(): void {
         this.provider = null
         this.wallet = null
-        this.nodeUrl = ''
 
         // 清除会话存储
         localStorage.removeItem('currentNodeUrl')
@@ -130,35 +125,6 @@ class ConnectionService {
     async getBlockNumber(): Promise<number> {
         const provider = this.getProvider()
         return await provider.getBlockNumber()
-    }
-
-    /**
-     * 创建合约实例
-     */
-    getContract(address: string, abi: any): ethers.Contract {
-        const wallet = this.getWallet()
-        return new ethers.Contract(address, abi, wallet)
-    }
-
-    /**
-     * 调用合约只读方法
-     */
-    async callContract(address: string, abi: any, method: string, ...params: any[]): Promise<any> {
-        const contract = this.getContract(address, abi)
-        return await contract[method](...params)
-    }
-
-    /**
-     * 发送合约交易
-     */
-    async sendContractTransaction(
-        address: string,
-        abi: any,
-        method: string,
-        ...params: any[]
-    ): Promise<ethers.TransactionResponse> {
-        const contract = this.getContract(address, abi)
-        return await contract[method](...params)
     }
 }
 

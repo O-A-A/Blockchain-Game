@@ -146,7 +146,7 @@ class PoolService {
       if (!isValid) {
         return {
           address: poolAddress,
-          name: this.uint256ToString(poolName) || 'NaN',
+          name: String(poolName),
           token0: {
             address: tokenAAddress,
             name: 'NaN',
@@ -188,7 +188,7 @@ class PoolService {
 
       return {
         address: poolAddress,
-        name: this.uint256ToString(poolName),
+        name: String(poolName),
         token0: token0Info,
         token1: token1Info,
         reserve0: reserve0Raw,
@@ -268,38 +268,6 @@ class PoolService {
       return (reserve0Num / reserve1Num).toString()
     } catch (error) {
       return '0'
-    }
-  }
-
-  /**
-   * 将 uint256 转换为字符串
-   */
-  private uint256ToString(value: any): string {
-    try {
-      if (typeof value === 'string' && !value.startsWith('0x')) {
-        return value
-      }
-
-      const numValue = typeof value === 'bigint' ? value : BigInt(value)
-
-      if (numValue < BigInt('0x10000000000000000')) {
-        return numValue.toString()
-      }
-
-      const hexStr = '0x' + numValue.toString(16).padStart(64, '0')
-      const bytes = ethers.getBytes(hexStr)
-
-      let endIndex = bytes.length
-      while (endIndex > 0 && bytes[endIndex - 1] === 0) {
-        endIndex--
-      }
-
-      if (endIndex === 0) return ''
-
-      const trimmedBytes = bytes.slice(0, endIndex)
-      return ethers.toUtf8String(trimmedBytes)
-    } catch (error) {
-      return String(value)
     }
   }
 }

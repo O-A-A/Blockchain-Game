@@ -334,21 +334,6 @@ class ContractScanService {
       }
     }
   }
-
-  /**
-   * 快速扫描新区块
-   * 从上次扫描位置开始扫描到最新区块
-   */
-  async scanNewBlocks(): Promise<ContractInfo[]> {
-    const contractsStore = useContractsStore()
-    const lastBlock = contractsStore.lastScanBlock
-
-    if (lastBlock === 0) {
-      throw new Error('请先进行完整扫描')
-    }
-
-    return await this.scanContracts(lastBlock + 1)
-  }
 }
 
 // 导出单例
