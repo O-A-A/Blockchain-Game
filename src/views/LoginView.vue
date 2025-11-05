@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid class="d-flex align-center justify-center" style="min-height: 100vh;">
+  <v-container fluid class="d-flex align-center justify-center">
     <v-card class="pa-8" elevation="8" style="width: 500px; max-width: 90vw;" rounded="xl">
       <v-card-title class="text-h4 font-weight-bold text-center mb-2">
         <v-icon size="48" color="primary" class="mb-2">mdi-wallet</v-icon>

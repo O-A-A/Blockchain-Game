@@ -174,14 +174,12 @@ class ContractInteractionService {
   async checkAndApprove(tokenAddress: string, spender: string, requiredAmount: string): Promise<boolean> {
     const signer = connectionService.getSigner();
     const owner = await signer.getAddress();
-    const requiredAmountBigInt = BigInt(requiredAmount);
 
     const currentAllowance = await this.getAllowance(tokenAddress, owner, spender);
 
-    if (currentAllowance < requiredAmountBigInt) {
-      console.log(`Allowance is low. Current: ${currentAllowance}, Required: ${requiredAmountBigInt}. Approving...`);
-      const approveAmount = ethers.MaxUint256.toString();
-      const approveResult = await this.approveToken(tokenAddress, spender, approveAmount);
+    if (currentAllowance < BigInt(requiredAmount)) {
+      console.log(`Allowance is low. Current: ${currentAllowance}, Required: ${requiredAmount}. Approving...`);
+      const approveResult = await this.approveToken(tokenAddress, spender, requiredAmount);
 
       if (!approveResult.success || !approveResult.receipt) {
         throw new Error(`Approve transaction failed to be sent or was reverted: ${approveResult.error}`);
