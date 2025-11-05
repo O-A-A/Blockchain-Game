@@ -25,14 +25,14 @@
           <v-card rounded="lg" elevation="2" class="pa-6">
             <div class="d-flex align-center mb-4">
               <v-avatar color="primary" size="56" class="mr-3">
-                <span class="text-white text-h5">{{ pool.token0.symbol.charAt(0) }}</span>
+                <span class="text-white text-h5">{{ "A" }}</span>
               </v-avatar>
               <v-avatar color="secondary" size="56" class="mr-4">
-                <span class="text-white text-h5">{{ pool.token1.symbol.charAt(0) }}</span>
+                <span class="text-white text-h5">{{ "B" }}</span>
               </v-avatar>
               <div class="flex-grow-1">
                 <h1 class="text-h4 font-weight-bold">{{ pool.name }}</h1>
-                <div class="text-body-1 text-medium-emphasis">{{ pool.token0.symbol }}/{{ pool.token1.symbol }} 流动性池
+                <div class="text-body-1 text-medium-emphasis">{{ pool.token0.name }}/{{ pool.token1.name }} 流动性池
                 </div>
                 <v-chip size="small" class="mt-2" prepend-icon="mdi-identifier">
                   <span class="font-mono">{{ formatAddress(pool.address) }}</span>
@@ -53,7 +53,7 @@
                   <v-icon size="small" color="primary">mdi-currency-usd</v-icon>
                   <div class="text-caption text-medium-emphasis mt-1">当前价格</div>
                   <div class="text-h6 font-weight-bold">{{ pool.price }}</div>
-                  <div class="text-caption">1 {{ pool.token0.symbol }} = {{ pool.price }} {{ pool.token1.symbol }}</div>
+                  <div class="text-caption">1 {{ pool.token0.name }} = {{ pool.price }} {{ pool.token1.name }}</div>
                 </div>
               </v-col>
               <v-col cols="12" sm="6" md="3">
@@ -90,10 +90,10 @@
           <v-card rounded="lg" elevation="1" class="pa-4">
             <div class="d-flex align-center mb-3">
               <v-avatar color="primary" size="40" class="mr-3">
-                <span class="text-white font-weight-bold">{{ pool.token0.symbol.charAt(0) }}</span>
+                <span class="text-white font-weight-bold">{{ "A" }}</span>
               </v-avatar>
               <div>
-                <div class="text-subtitle-1 font-weight-bold">{{ pool.token0.symbol }}</div>
+                <div class="text-subtitle-1 font-weight-bold">{{ "A" }}</div>
                 <div class="text-caption text-medium-emphasis">{{ pool.token0.name }}</div>
               </div>
             </div>
@@ -117,10 +117,10 @@
           <v-card rounded="lg" elevation="1" class="pa-4">
             <div class="d-flex align-center mb-3">
               <v-avatar color="secondary" size="40" class="mr-3">
-                <span class="text-white font-weight-bold">{{ pool.token1.symbol.charAt(0) }}</span>
+                <span class="text-white font-weight-bold">{{ "B" }}</span>
               </v-avatar>
               <div>
-                <div class="text-subtitle-1 font-weight-bold">{{ pool.token1.symbol }}</div>
+                <div class="text-subtitle-1 font-weight-bold">{{ "B" }}</div>
                 <div class="text-caption text-medium-emphasis">{{ pool.token1.name }}</div>
               </div>
             </div>

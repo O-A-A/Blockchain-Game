@@ -25,11 +25,11 @@
           <v-card rounded="lg" elevation="2" class="pa-6">
             <div class="d-flex align-center mb-4">
               <v-avatar :color="isWBKC ? 'secondary' : 'primary'" size="64" class="mr-4">
-                <span class="text-white text-h4">{{ tokenInfo.symbol ? tokenInfo.symbol.charAt(0) : 'T' }}</span>
+                <span class="text-white text-h4">{{ "X" }}</span>
               </v-avatar>
               <div class="flex-grow-1">
                 <h1 class="text-h4 font-weight-bold">{{ tokenInfo.name || '未命名代币' }}</h1>
-                <div class="text-body-1 text-medium-emphasis">{{ tokenInfo.symbol || 'N/A' }}</div>
+                <div class="text-body-1 text-medium-emphasis">{{ "X" }}</div>
                 <v-chip size="small" :color="isWBKC ? 'secondary' : 'primary'" class="mt-2">
                   {{ isWBKC ? 'Wrapped BKC' : 'ERC20 Token' }}
                 </v-chip>
@@ -52,7 +52,7 @@
                   <v-icon size="small" color="primary">mdi-chart-box</v-icon>
                   <div class="text-caption text-medium-emphasis mt-1">总供应量</div>
                   <div class="text-h6 font-weight-bold">{{ formatBalance(tokenInfo.totalSupply) }}</div>
-                  <div class="text-caption">{{ tokenInfo.symbol }}</div>
+                  <div class="text-caption">{{ tokenInfo.name }}</div>
                 </div>
               </v-col>
               <v-col cols="12" sm="6" md="3">
@@ -60,7 +60,7 @@
                   <v-icon size="small" color="success">mdi-wallet</v-icon>
                   <div class="text-caption text-medium-emphasis mt-1">我的余额</div>
                   <div class="text-h6 font-weight-bold">{{ userBalance }}</div>
-                  <div class="text-caption">{{ tokenInfo.symbol }}</div>
+                  <div class="text-caption">{{ tokenInfo.name }}</div>
                 </div>
               </v-col>
               <v-col cols="12" sm="6" md="3">

@@ -61,17 +61,17 @@
               <template v-slot:prepend>
                 <v-avatar :color="token.type === 1 ? 'secondary' : 'primary'" variant="flat" size="40">
                   <span class="text-subtitle-2 font-weight-bold text-white">
-                    {{ token.symbol?.charAt(0) || 'T' }}
+                    {{ "X" }}
                   </span>
                 </v-avatar>
               </template>
 
               <v-list-item-title class="font-weight-bold">{{ token.name || '未命名' }}</v-list-item-title>
-              <v-list-item-subtitle>{{ token.symbol || 'N/A' }}</v-list-item-subtitle>
+              <v-list-item-subtitle>{{ "X" }}</v-list-item-subtitle>
 
               <template v-slot:append>
                 <div class="text-end">
-                  <div class="font-weight-bold">{{ formatBalance(token.balance) }} {{ token.symbol || '' }}</div>
+                  <div class="font-weight-bold">{{ formatBalance(token.balance) }} {{ token.name }}</div>
                   <div class="text-caption text-medium-emphasis">{{ formatAddress(token.address) }}</div>
                 </div>
               </template>
@@ -113,18 +113,18 @@
               <template v-slot:prepend>
                 <v-avatar color="info" variant="flat" size="40" class="mr-2">
                   <span class="text-subtitle-2 font-weight-bold text-white">
-                    {{ pool.token0Symbol?.charAt(0) || 'A' }}
+                    {{ 'A' }}
                   </span>
                 </v-avatar>
                 <v-avatar color="secondary" variant="flat" size="40">
                   <span class="text-subtitle-2 font-weight-bold text-white">
-                    {{ pool.token1Symbol?.charAt(0) || 'B' }}
+                    {{ 'B' }}
                   </span>
                 </v-avatar>
               </template>
 
               <v-list-item-title class="font-weight-bold">{{ pool.name || '未命名池' }}</v-list-item-title>
-              <v-list-item-subtitle>{{ pool.token0Symbol }}/{{ pool.token1Symbol }}</v-list-item-subtitle>
+              <v-list-item-subtitle>{{ "A" }}/{{ "B" }}</v-list-item-subtitle>
 
               <template v-slot:append>
                 <div class="text-end">
@@ -163,7 +163,6 @@ const lastUpdated = ref('刚刚')
 const tokenBalances = ref<Array<{
   address: string
   name: string
-  symbol: string
   balance: string
   type: number
 }>>([])
@@ -206,7 +205,6 @@ const refreshBalances = async () => {
         return {
           address: token.address,
           name: tokenInfo.name || '未命名',
-          symbol: tokenInfo.symbol || 'N/A',
           balance: balance.toString(),
           type: token.type
         }
@@ -244,8 +242,6 @@ const refreshBalances = async () => {
         return {
           address: pool.address,
           name: pool.name || '未命名池',
-          token0Symbol: pool.token0.symbol || 'A',
-          token1Symbol: pool.token1.symbol || 'B',
           lpBalance: lpBalance.toString(),
           sharePercentage
         }

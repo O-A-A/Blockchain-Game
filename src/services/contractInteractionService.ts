@@ -127,12 +127,10 @@ class ContractInteractionService {
     const contractType = results[4].status === 'fulfilled' ? results[4].value : BigInt(0)
 
     const name = this.uint256ToString(coinName) || 'NaN'
-    const symbol = "None"
 
     return {
       address,
       name,
-      symbol,
       decimals: 18,
       totalSupply: totalSupply.toString(),
       url: this.uint256ToString(imgUrl) || '',
@@ -227,7 +225,6 @@ class ContractInteractionService {
     return {
       address,
       name,
-      symbol: 'WBKC', // WBKC 固定符号
       decimals: 18, // 默认18位精度
       totalSupply: totalSupply.toString(),
       url: this.uint256ToString(imgUrl) || '',

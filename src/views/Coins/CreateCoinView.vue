@@ -225,9 +225,9 @@
             <div class="text-body-2 font-weight-medium">{{ deployedToken.name }}</div>
           </div>
           
-          <div class="mb-4" v-if="deployedToken.symbol">
+          <div class="mb-4">
             <div class="text-caption text-medium-emphasis mb-1">代币符号</div>
-            <div class="text-body-2 font-weight-medium">{{ deployedToken.symbol }}</div>
+            <div class="text-body-2 font-weight-medium">{{ "X" }}</div>
           </div>
 
           <div class="mb-4">
@@ -295,7 +295,6 @@ const formData = ref({
 
 const deployedToken = ref({
   name: '',
-  symbol: '',
   address: '',
   type: '',
   initialSupply: '0'
@@ -338,7 +337,6 @@ const deployToken = async () => {
     // 设置部署结果
     deployedToken.value = {
       name: result.contractInfo.name || formData.value.name,
-      symbol: result.contractInfo.symbol || 'TOKEN',
       address: result.contractAddress,
       type: tokenType.value,
       initialSupply: tokenType.value === 'erc20' ? formData.value.initialSupply : '0'

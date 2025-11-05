@@ -40,7 +40,7 @@
             <v-icon size="small">mdi-information</v-icon>
             活跃池数
           </div>
-          <div class="text-h6 font-weight-bold">{{ filteredPools.length }}</div>
+          <div class="text-h6 font-weight-bold">{{ AmmPools.length }}</div>
         </v-card>
       </v-col>
     </v-row>
@@ -54,14 +54,14 @@
         </v-alert>
 
         <!-- 加载提示 -->
-        <v-card v-if="loading && pools.length === 0" rounded="lg" elevation="2" class="pa-8 text-center">
+        <v-card v-if="loading && AmmPools.length === 0" rounded="lg" elevation="2" class="pa-8 text-center">
           <v-progress-circular indeterminate color="primary" size="64" class="mb-4"></v-progress-circular>
           <p class="text-body-1">正在从区块链加载池子数据...</p>
         </v-card>
 
         <!-- 池列表 -->
         <v-card v-else rounded="lg" elevation="2">
-          <div v-if="filteredPools.length === 0 && !loading" class="pa-8 text-center">
+          <div v-if="AmmPools.length === 0 && !loading" class="pa-8 text-center">
             <v-icon size="48" class="text-medium-emphasis mb-2">mdi-database-off</v-icon>
             <p class="text-body-2 text-medium-emphasis">暂无符合条件的流动性池</p>
             <p class="text-caption text-medium-emphasis mt-2">请先扫描区块链或创建新的流动性池</p>
@@ -78,7 +78,7 @@
             </thead>
             <tbody>
               <tr
-                v-for="pool in filteredPools"
+                v-for="pool in AmmPools"
                 :key="pool.address"
                 class="hover-row"
                 @click="goToPoolDetail(pool.address)"
@@ -88,12 +88,12 @@
                 <td>
                   <div class="d-flex align-center py-2">
                     <v-avatar color="primary" size="32" class="mr-2">
-                      <span class="text-white text-caption font-weight-bold">{{ pool.token0.symbol.charAt(0) }}</span>
+                      <span class="text-white text-caption font-weight-bold">{{ "A" }}</span>
                     </v-avatar>
                     <v-avatar color="secondary" size="32" class="mr-3">
-                      <span class="text-white text-caption font-weight-bold">{{ pool.token1.symbol.charAt(0) }}</span>
+                      <span class="text-white text-caption font-weight-bold">{{ "B" }}</span>
                     </v-avatar>
-                    <span class="font-weight-medium">{{ pool.token0.symbol }}/{{ pool.token1.symbol }}</span>
+                    <span class="font-weight-medium">{{ pool.token0.name }}/{{ pool.token1.name }}</span>
                   </div>
                 </td>
 
@@ -104,8 +104,8 @@
 
                 <!-- 流动性 -->
                 <td class="text-right">
-                  <div class="font-weight-medium">{{ pool.reserve0 }} {{ pool.token0.symbol }}</div>
-                  <div class="text-caption text-medium-emphasis">{{ pool.reserve1 }} {{ pool.token1.symbol }}</div>
+                  <div class="font-weight-medium">{{ pool.reserve0 }} {{ pool.token0.name }}</div>
+                  <div class="text-caption text-medium-emphasis">{{ pool.reserve1 }} {{ pool.token1.name }}</div>
                 </td>
 
                 <!-- 操作 -->
@@ -144,7 +144,7 @@ const router = useRouter()
 // 响应式数据
 const searchQuery = ref('')
 const showCopySuccess = ref(false)
-const pools = ref<PoolInfo[]>([])
+const AmmPools = ref<PoolInfo[]>([])
 const loading = ref(false)
 const error = ref('')
 
@@ -154,31 +154,13 @@ const loadPools = async () => {
   error.value = ''
   
   try {
-    pools.value = await poolService.getAllPools()
+    AmmPools.value = await poolService.getAllPools()
   } catch (err: any) {
     error.value = err.message || '加载失败'
   } finally {
     loading.value = false
   }
 }
-
-// 过滤池
-const filteredPools = computed(() => {
-  let poolsList = pools.value
-
-  // 搜索过滤
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    poolsList = poolsList.filter(pool =>
-      pool.name.toLowerCase().includes(query) ||
-      pool.token0.symbol.toLowerCase().includes(query) ||
-      pool.token1.symbol.toLowerCase().includes(query) ||
-      pool.address.toLowerCase().includes(query)
-    )
-  }
-
-  return poolsList
-})
 
 // 导航到池详情页
 const goToPoolDetail = (address: string) => {

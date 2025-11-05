@@ -22,7 +22,6 @@ export interface PoolInfo {
 
 export interface TokenInfo {
   address: string
-  symbol: string
   name: string
 }
 
@@ -150,12 +149,10 @@ class PoolService {
           name: this.uint256ToString(poolName) || 'NaN',
           token0: {
             address: tokenAAddress,
-            symbol: 'NaN',
             name: 'NaN',
           },
           token1: {
             address: tokenBAddress,
-            symbol: 'NaN',
             name: 'NaN',
           },
           reserve0: 'NaN',
@@ -228,7 +225,6 @@ class PoolService {
 
         return {
           address: tokenAddress,
-          symbol: info.symbol,
           name: info.name,
         }
       }
@@ -237,14 +233,12 @@ class PoolService {
       const info = await contractInteractionService.getERC20Info(tokenAddress)
       return {
         address: tokenAddress,
-        symbol: info.symbol,
         name: info.name,
       }
     } catch (error) {
       // 返回默认值
       return {
         address: tokenAddress,
-        symbol: 'UNKNOWN',
         name: 'Unknown Token',
       }
     }
