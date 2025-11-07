@@ -187,6 +187,31 @@ class ConnectionService {
     const provider = this.getProvider()
     return await provider.getBlockNumber()
   }
+
+  /**
+   * 获取当前连接钱包的余额（以 Ether 为单位的字符串）
+   *
+   * 返回值：例如 "0.1234"（单位：ether）
+   */
+  async getBalance(): Promise<string> {
+    const provider = this.getProvider()
+
+    const address = this.account
+
+    if (address === null) {
+      return "0"
+    }
+
+    // 获取余额（返回 bigint）
+    const balance = await provider.getBalance(address)
+
+    // 将余额格式化为 ether 单位的字符串
+    try {
+      return ethers.formatEther(balance)
+    } catch (e) {
+      return "0"
+    }
+  }
 }
 
 // 导出单例实例

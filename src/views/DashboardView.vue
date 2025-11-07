@@ -8,7 +8,7 @@
           <v-card-text class="pa-4">
             <div class="text-overline text-medium-emphasis mb-1">原始代币数量</div>
             <div class="d-flex align-center">
-              <h1 class="text-h5 font-weight-bold">${{ "ANY" }}</h1>
+              <h1 class="text-h5 font-weight-bold">${{ userBalance }}</h1>
             </div>
 
             <!-- 刷新按钮和最后更新时间 -->
@@ -175,10 +175,14 @@ const lpBalances = ref<Array<{
   sharePercentage: string
 }>>([])
 
+const userBalance = ref("0")
+
 
 // 刷新余额
 const refreshBalances = async () => {
   loading.value = true
+
+  userBalance.value = await connectionService.getBalance()
   
   try {
     // 获取用户地址
