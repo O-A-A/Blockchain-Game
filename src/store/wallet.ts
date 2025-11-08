@@ -16,19 +16,6 @@ export const useWalletStore = defineStore('wallet', () => {
     const isLoading = ref<boolean>(false)
     const error = ref<string | null>(null)
     const transactions = ref<Array<any>>([]) // 交易记录
-    
-    // 计算属性
-    const usdValue = computed(() => {
-        try {
-            // wBKC 到 USD 的汇率：1 wBKC = 0.1 USD
-            if (!address.value) return '0.00';
-            const balanceNum = parseFloat(wbkcBalance.value);
-            if (isNaN(balanceNum)) return '0.00';
-            return (balanceNum * 0.1).toFixed(2)
-        } catch {
-            return '0.00'
-        }
-    })
 
     // 设置钱包地址
     const setAddress = (newAddress: string | null) => {
@@ -155,7 +142,6 @@ export const useWalletStore = defineStore('wallet', () => {
         isLoading,
         error,
         transactions,
-        usdValue,
         refreshBalances,
         init,
         setAddress,

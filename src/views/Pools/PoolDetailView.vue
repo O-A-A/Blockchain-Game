@@ -225,6 +225,7 @@ import type { PoolInfo } from '@/services/poolService'
 import connectionService from '@/services/connectionService'
 import ContractFunctionCaller from '@/components/ContractFunctionCaller.vue'
 import { formatAddress, formatBalance } from '@/utils/formatters'
+import { uint256ToString } from '@/utils/formatters'
 
 const router = useRouter()
 const route = useRoute()
@@ -311,7 +312,7 @@ const setFunction = (functionName: string, prefillParams?: string[]) => {
           break
         case 'addLiquidity':
           // 添加流动性：参数 (amountA, amountB)
-          params = ['100', '100']
+          params = ['10000', '10000']
           break
         case 'removeLiquidity':
           params = ['100']

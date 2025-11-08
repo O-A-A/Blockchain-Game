@@ -1,6 +1,7 @@
 // contractInteractionService.ts - 通用合约交互服务
 import { ethers } from 'ethers'
 import connectionService from './connectionService'
+import { uint256ToString } from '@/utils/formatters'
 
 // 导入ABIs
 import erc20Abi from '@/abis/e20c.json'
@@ -126,14 +127,14 @@ class ContractInteractionService {
     const owner = results[3].status === 'fulfilled' ? results[3].value : ethers.ZeroAddress
     const contractType = results[4].status === 'fulfilled' ? results[4].value : BigInt(0)
 
-    const name = this.uint256ToString(coinName) || 'NaN'
+    const name = uint256ToString(coinName) || 'NaN'
 
     return {
       address,
       name,
       decimals: 18,
       totalSupply: totalSupply.toString(),
-      url: this.uint256ToString(imgUrl) || '',
+      url: uint256ToString(imgUrl) || '',
       owner,
       contractType: Number(contractType)
     }
@@ -218,56 +219,16 @@ class ContractInteractionService {
     const owner = results[3].status === 'fulfilled' ? results[3].value : ethers.ZeroAddress
     const contractType = results[4].status === 'fulfilled' ? results[4].value : BigInt(1)
 
-    const name = this.uint256ToString(coinName) || 'NaN'
+    const name = uint256ToString(coinName) || 'NaN'
 
     return {
       address,
       name,
       decimals: 18, // 默认18位精度
       totalSupply: totalSupply.toString(),
-      url: this.uint256ToString(imgUrl) || '',
+      url: uint256ToString(imgUrl) || '',
       owner,
       contractType: Number(contractType)
-    }
-  }
-
-  /**
-   * 将 uint256 转换为字符串（处理编码的字符串）
-   */
-  private uint256ToString(value: any): string {
-    try {
-      // 如果已经是普通字符串，直接返回
-      if (typeof value === 'string' && !value.startsWith('0x')) {
-        return value
-      }
-
-      // 如果是 BigInt 或数字
-      const numValue = typeof value === 'bigint' ? value : BigInt(value)
-
-      // 如果数值很小，可能是直接存储的数字，返回字符串形式
-      if (numValue < BigInt('0x10000000000000000')) {
-        return numValue.toString()
-      }
-
-      // 转为 hex string
-      const hexStr = '0x' + numValue.toString(16).padStart(64, '0')
-
-      // 转为 bytes
-      const bytes = ethers.getBytes(hexStr)
-
-      // 移除尾部的0
-      let endIndex = bytes.length
-      while (endIndex > 0 && bytes[endIndex - 1] === 0) {
-        endIndex--
-      }
-
-      if (endIndex === 0) return ''
-
-      // 转为字符串
-      const trimmedBytes = bytes.slice(0, endIndex)
-      return ethers.toUtf8String(trimmedBytes)
-    } catch (error) {
-      return String(value)
     }
   }
 }

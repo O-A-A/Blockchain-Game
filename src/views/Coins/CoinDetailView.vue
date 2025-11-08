@@ -29,7 +29,7 @@
               </v-avatar>
               <div class="flex-grow-1">
                 <h1 class="text-h4 font-weight-bold">{{ tokenInfo.name || '未命名代币' }}</h1>
-                <div class="text-body-1 text-medium-emphasis">{{ "X" }}</div>
+                <div class="text-body-1 text-medium-emphasis">{{ tokenInfo.url }}</div>
                 <v-chip size="small" :color="isWBKC ? 'secondary' : 'primary'" class="mt-2">
                   {{ isWBKC ? 'Wrapped BKC' : 'ERC20 Token' }}
                 </v-chip>

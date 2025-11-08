@@ -15,26 +15,21 @@
             选择代币类型
           </v-card-title>
           <v-divider></v-divider>
-          
+
           <v-card-text class="pa-6">
             <v-row>
               <!-- ERC20 选项 -->
               <v-col cols="12" md="6">
-                <v-card
-                  :class="[
-                    'pa-4 rounded-lg cursor-pointer transition-all',
-                    tokenType === 'erc20'
-                      ? 'border-primary bg-primary-light'
-                      : 'border-secondary hover:elevation-4'
-                  ]"
-                  :border="tokenType === 'erc20'"
-                  @click="tokenType = 'erc20'"
-                  style="cursor: pointer; border: 2px solid transparent; position: relative"
-                  :style="{
+                <v-card :class="[
+                  'pa-4 rounded-lg cursor-pointer transition-all',
+                  tokenType === 'erc20'
+                    ? 'border-primary bg-primary-light'
+                    : 'border-secondary hover:elevation-4'
+                ]" :border="tokenType === 'erc20'" @click="tokenType = 'erc20'"
+                  style="cursor: pointer; border: 2px solid transparent; position: relative" :style="{
                     borderColor: tokenType === 'erc20' ? 'rgb(var(--v-theme-primary))' : 'transparent',
                     backgroundColor: tokenType === 'erc20' ? 'rgba(var(--v-theme-primary), 0.08)' : 'transparent'
-                  }"
-                >
+                  }">
                   <div class="d-flex align-center mb-2">
                     <v-icon size="40" color="primary" class="mr-3">mdi-currency-usd</v-icon>
                     <div>
@@ -54,20 +49,16 @@
 
               <!-- Wrapped 代币选项 -->
               <v-col cols="12" md="6">
-                <v-card
-                  :class="[
-                    'pa-4 rounded-lg cursor-pointer transition-all',
-                    tokenType === 'wrapped'
-                      ? 'border-primary bg-primary-light'
-                      : 'border-secondary hover:elevation-4'
-                  ]"
-                  @click="tokenType = 'wrapped'"
-                  style="cursor: pointer; border: 2px solid transparent; position: relative"
-                  :style="{
+                <v-card :class="[
+                  'pa-4 rounded-lg cursor-pointer transition-all',
+                  tokenType === 'wrapped'
+                    ? 'border-primary bg-primary-light'
+                    : 'border-secondary hover:elevation-4'
+                ]" @click="tokenType = 'wrapped'"
+                  style="cursor: pointer; border: 2px solid transparent; position: relative" :style="{
                     borderColor: tokenType === 'wrapped' ? 'rgb(var(--v-theme-primary))' : 'transparent',
                     backgroundColor: tokenType === 'wrapped' ? 'rgba(var(--v-theme-primary), 0.08)' : 'transparent'
-                  }"
-                >
+                  }">
                   <div class="d-flex align-center mb-2">
                     <v-icon size="40" color="secondary" class="mr-3">mdi-water</v-icon>
                     <div>
@@ -101,55 +92,27 @@
               <v-row>
                 <!-- 代币名称 -->
                 <v-col cols="12">
-                  <v-text-field
-                    v-model="formData.name"
-                    label="代币名称"
-                    placeholder="例如: My Token"
-                    prepend-inner-icon="mdi-alphabetical"
-                    variant="outlined"
-                    density="comfortable"
-                    :rules="[v => !!v || '代币名称不能为空', v => v.length <= 31 || '名称不能超过31个字符']"
-                    rounded="lg"
-                    hint="智能合约将存储此名称，最长31字符"
-                    persistent-hint
-                  ></v-text-field>
+                  <v-text-field v-model="formData.name" label="代币名称" placeholder="例如: My Token"
+                    prepend-inner-icon="mdi-alphabetical" variant="outlined" density="comfortable"
+                    :rules="[v => !!v || '代币名称不能为空', v => v.length <= 31 || '名称不能超过31个字符']" rounded="lg"
+                    hint="智能合约将存储此名称，最长31字符" persistent-hint></v-text-field>
                 </v-col>
 
                 <!-- 图片URL -->
                 <v-col cols="12">
-                  <v-text-field
-                    v-model="formData.imgUrl"
-                    label="图片URL"
-                    placeholder="例如: https://example.com/token.png"
-                    prepend-inner-icon="mdi-image"
-                    variant="outlined"
-                    density="comfortable"
-                    rounded="lg"
-                    :rules="[v => !!v || '图片URL不能为空', v => v.length <= 31 || 'URL不能超过31个字符']"
-                    required
-                    hint="代币图标的URL地址，最长31字符（必填）"
-                    persistent-hint
-                  ></v-text-field>
+                  <v-text-field v-model="formData.imgUrl" label="图片URL" placeholder="例如: https://example.com/token.png"
+                    prepend-inner-icon="mdi-image" variant="outlined" density="comfortable" rounded="lg"
+                    :rules="[v => !!v || '图片URL不能为空', v => v.length <= 31 || 'URL不能超过31个字符']" required
+                    hint="代币图标的URL地址，最长31字符（必填）" persistent-hint></v-text-field>
                 </v-col>
 
                 <!-- 初始供应量 (仅 ERC20 显示) -->
                 <v-col v-if="tokenType === 'erc20'" cols="12">
-                  <v-text-field
-                    v-model="formData.initialSupply"
-                    label="初始供应量"
-                    type="number"
-                    min="0"
-                    prepend-inner-icon="mdi-plus-box"
-                    variant="outlined"
-                    density="comfortable"
-                    :rules="[
+                  <v-text-field v-model="formData.initialSupply" label="初始供应量" type="number" min="0"
+                    prepend-inner-icon="mdi-plus-box" variant="outlined" density="comfortable" :rules="[
                       v => v !== null && v !== '' || '初始供应量不能为空',
                       v => Number(v) >= 0 || '初始供应量不能为负数'
-                    ]"
-                    rounded="lg"
-                    hint="代币的初始发行量（单位：个，将自动转换为最小单位）"
-                    persistent-hint
-                  ></v-text-field>
+                    ]" rounded="lg" hint="代币的初始发行量（单位：个，将自动转换为最小单位）" persistent-hint></v-text-field>
                 </v-col>
 
                 <!-- Wrapped 代币说明 -->
@@ -178,28 +141,14 @@
               <!-- 操作按钮 -->
               <v-row class="mt-6">
                 <v-col cols="12" md="6">
-                  <v-btn
-                    variant="outlined"
-                    color="primary"
-                    size="large"
-                    block
-                    rounded="lg"
-                    @click="goBack"
-                  >
+                  <v-btn variant="outlined" color="primary" size="large" block rounded="lg" @click="goBack">
                     <v-icon class="mr-2">mdi-arrow-left</v-icon>
                     返回
                   </v-btn>
                 </v-col>
                 <v-col cols="12" md="6">
-                  <v-btn
-                    type="submit"
-                    color="primary"
-                    size="large"
-                    block
-                    rounded="lg"
-                    :loading="isLoading"
-                    :disabled="isLoading"
-                  >
+                  <v-btn type="submit" color="primary" size="large" block rounded="lg" :loading="isLoading"
+                    :disabled="isLoading">
                     <v-icon class="mr-2">mdi-rocket-launch</v-icon>
                     部署代币
                   </v-btn>
@@ -224,7 +173,7 @@
             <div class="text-caption text-medium-emphasis mb-1">代币名称</div>
             <div class="text-body-2 font-weight-medium">{{ deployedToken.name }}</div>
           </div>
-          
+
           <div class="mb-4">
             <div class="text-caption text-medium-emphasis mb-1">代币符号</div>
             <div class="text-body-2 font-weight-medium">{{ "X" }}</div>
@@ -234,13 +183,7 @@
             <div class="text-caption text-medium-emphasis mb-1">合约地址</div>
             <div class="d-flex align-center bg-surface-variant pa-3 rounded">
               <span class="text-caption font-mono">{{ deployedToken.address }}</span>
-              <v-btn
-                icon
-                size="x-small"
-                variant="text"
-                class="ml-2"
-                @click="copyAddress"
-              >
+              <v-btn icon size="x-small" variant="text" class="ml-2" @click="copyAddress">
                 <v-icon size="small">mdi-content-copy</v-icon>
               </v-btn>
             </div>
@@ -254,13 +197,7 @@
 
         <v-card-actions class="pa-6">
           <v-spacer></v-spacer>
-          <v-btn
-            color="primary"
-            size="large"
-            block
-            rounded="lg"
-            @click="goToTokenList"
-          >
+          <v-btn color="primary" size="large" block rounded="lg" @click="goToTokenList">
             查看代币列表
           </v-btn>
         </v-card-actions>
@@ -274,10 +211,11 @@
   </v-container>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import contractDeployService from '@/services/contractDeployService'
+import { stringToUint256, uint256ToString } from '@/utils/formatters'
 
 const router = useRouter()
 
@@ -290,7 +228,7 @@ const showCopySuccess = ref(false)
 const formData = ref({
   name: '',
   imgUrl: '',
-  initialSupply: '1000000'
+  initialSupply: 100000n,
 })
 
 const deployedToken = ref({
@@ -302,8 +240,9 @@ const deployedToken = ref({
 
 // 部署代币
 const deployToken = async () => {
-  const { valid } = await form.value.validate()
-  if (!valid) return
+  if (!form.value) {
+    return
+  }
 
   isLoading.value = true
 
@@ -313,15 +252,15 @@ const deployToken = async () => {
     if (tokenType.value === 'erc20') {
       console.log("deploying ERC20 ...")
       result = await contractDeployService.deployERC20({
-        name: formData.value.name,
+        name: stringToUint256(formData.value.name),
         totalSupply: formData.value.initialSupply,
-        imgUrl: formData.value.imgUrl || ''
+        imgUrl: stringToUint256(formData.value.imgUrl) || 0n
       })
     } else {
       console.log("deploying WBKC ...")
       result = await contractDeployService.deployWBKC({
-        name: formData.value.name,
-        imgUrl: formData.value.imgUrl || ''
+        name: stringToUint256(formData.value.name),
+        imgUrl: stringToUint256(formData.value.imgUrl) || 0n
       })
     }
 
@@ -336,14 +275,14 @@ const deployToken = async () => {
 
     // 设置部署结果
     deployedToken.value = {
-      name: result.contractInfo.name || formData.value.name,
+      name: uint256ToString(result.contractInfo.name) || formData.value.name,
       address: result.contractAddress,
       type: tokenType.value,
-      initialSupply: tokenType.value === 'erc20' ? formData.value.initialSupply : '0'
+      initialSupply: tokenType.value === 'erc20' ? formData.value.initialSupply.toString() : '0'
     }
 
     showSuccessDialog.value = true
-  } catch (error) {
+  } catch (error: any) {
     alert(`部署失败: ${error.message || '未知错误'}`)
   } finally {
     isLoading.value = false

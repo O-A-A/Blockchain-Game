@@ -210,3 +210,51 @@ export function formatPercentage(value: number | string, decimals: number = 2): 
   }
 }
 
+export function uint256ToString(value: bigint): string {
+  if (value < 0n) throw new Error("uint256 must be non-negative");
+  if (value > (1n << 256n) - 1n) throw new Error("Value exceeds uint256 range");
+
+  let bytes: number[] = [];
+  let temp = value;
+
+  // 提取每个字节（从低到高）
+  while (temp > 0n) {
+    bytes.push(Number(temp & 0xFFn));
+    temp >>= 8n;
+  }
+
+  // 如果 bytes 为空，说明是 0 → 对应空字符串或 "\0"？根据需求决定
+  if (bytes.length === 0) return "";
+
+  // 反转得到高位在前的字节序列
+  bytes.reverse();
+
+  // 检查是否所有字节都是有效的 ASCII（可选）
+  for (const b of bytes) {
+    if (b > 127) {
+      throw new Error("Byte value exceeds ASCII range (0–127)");
+    }
+  }
+
+  return String.fromCharCode(...bytes);
+}
+
+export function stringToUint256(str: string): bigint {
+  // 检查是否为纯 ASCII
+  for (let i = 0; i < str.length; i++) {
+    if (str.charCodeAt(i) > 127) {
+      throw new Error("String contains non-ASCII characters");
+    }
+  }
+
+  if (str.length > 32) {
+    throw new Error("String too long for uint256 (max 32 ASCII chars)");
+  }
+
+  let result = 0n;
+  for (let i = 0; i < str.length; i++) {
+    result = (result << 8n) + BigInt(str.charCodeAt(i));
+  }
+
+  return result;
+}

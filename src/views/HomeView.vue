@@ -278,10 +278,6 @@
   </div>
 </template>
 
-<script setup>
-// 首页脚本（暂无特殊逻辑）
-</script>
-
 <style scoped>
 .hero-section {
   background: #1a1a1a;

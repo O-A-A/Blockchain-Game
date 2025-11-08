@@ -25,9 +25,9 @@ export interface BaseContractInfo {
  */
 export interface ERC20ContractInfo extends BaseContractInfo {
   type: ContractType.ERC20
-  name: number              // 代币名称（实际是uint256）
-  totalSupply: number       // 总供应量
-  imgUrl: number            // 图片URL（uint256）
+  name: bigint              // 代币名称（实际是uint256）
+  totalSupply: bigint       // 总供应量
+  imgUrl: bigint            // 图片URL（uint256）
 }
 
 /**
@@ -35,9 +35,9 @@ export interface ERC20ContractInfo extends BaseContractInfo {
  */
 export interface WBKCContractInfo extends BaseContractInfo {
   type: ContractType.WBKC
-  name: number            
-  imgUrl: number      
-  totalSupply: number
+  name: bigint           
+  imgUrl: bigint      
+  totalSupply: bigint
 }
 
 /**
@@ -45,8 +45,8 @@ export interface WBKCContractInfo extends BaseContractInfo {
  */
 export interface AMMContractInfo extends BaseContractInfo {
   type: ContractType.AMM
-  name: number
-  imgUrl: number
+  name: bigint
+  imgUrl: bigint
   tokenA: string            // Token A地址
   tokenB: string            // Token B地址
   reserves?: {              // 储备量
@@ -78,17 +78,17 @@ export interface ScanProgress {
  * 合约部署参数 - ERC20
  */
 export interface DeployERC20Params {
-  name: number           
-  totalSupply: number     
-  imgUrl: number     
+  name: bigint           
+  totalSupply: bigint     
+  imgUrl: bigint     
 }
 
 /**
  * 合约部署参数 - WBKC
  */
 export interface DeployWBKCParams {
-  name: number         
-  imgUrl: number
+  name: bigint         
+  imgUrl: bigint
 }
 
 /**
@@ -97,8 +97,8 @@ export interface DeployWBKCParams {
 export interface DeployAMMParams {
   tokenA: string            // Token A地址
   tokenB: string            // Token B地址
-  poolName: number 
-  imgUrl: number
+  poolName: bigint
+  imgUrl: bigint
 }
 
 /**

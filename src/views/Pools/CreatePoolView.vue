@@ -37,7 +37,7 @@
                 <!-- Token A 信息 -->
                 <v-card v-if="selectedTokenA" variant="outlined" rounded="lg" class="pa-3 mt-2">
                   <div class="text-caption text-medium-emphasis">代币 A</div>
-                  <div class="font-weight-medium">{{ selectedTokenA?.name }}</div>
+                  <div class="font-weight-medium">{{ uint256ToString(selectedTokenA?.name) }}</div>
                   <div class="text-caption text-medium-emphasis font-mono">{{ formatAddress(selectedTokenA.address) }}</div>
                 </v-card>
               </v-col>
@@ -74,7 +74,7 @@
                 <!-- Token B 信息 -->
                 <v-card v-if="selectedTokenB" variant="outlined" rounded="lg" class="pa-3 mt-2">
                   <div class="text-caption text-medium-emphasis">代币 B</div>
-                  <div class="font-weight-medium">{{ selectedTokenB?.name }}</div>
+                  <div class="font-weight-medium">{{ uint256ToString(selectedTokenB?.name) }}</div>
                   <div class="text-caption text-medium-emphasis font-mono">{{ formatAddress(selectedTokenB.address) }}</div>
                 </v-card>
               </v-col>
@@ -94,7 +94,7 @@
               variant="tonal"
               class="mt-4"
             >
-              <div class="font-weight-bold">交易对: {{ selectedTokenA.address }}/{{ selectedTokenB.address }}</div>
+              <div class="font-weight-bold">交易对: {{ uint256ToString(selectedTokenA.name) }}/{{ uint256ToString(selectedTokenB.name) }}</div>
             </v-alert>
             </v-form>
           </v-card-text>
@@ -118,7 +118,7 @@
                 variant="outlined"
                 density="comfortable"
                 rounded="lg"
-                hint="池的名称，UTF-8编码后最长32字节（必填）"
+                hint="池的名称，ASCII编码后最长32字节（必填）"
                 persistent-hint
                 class="mb-4"
               ></v-text-field>
@@ -131,7 +131,7 @@
                 variant="outlined"
                 density="comfortable"
                 rounded="lg"
-                hint="池图标的URL地址，UTF-8编码后最长32字节（必填）"
+                hint="池图标的URL地址，ASCII编码后最长32字节（必填）"
                 persistent-hint
               ></v-text-field>
             </v-form>
@@ -258,10 +258,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { ethers } from 'ethers'
 import { useContractsStore } from '@/store/contracts'
 import contractDeployService from '@/services/contractDeployService'
 import { useDialog } from '@/composables/useDialog'
+import { stringToUint256, uint256ToString} from '@/utils/formatters'
 
 const router = useRouter()
 const contractsStore = useContractsStore()
@@ -275,8 +275,8 @@ const poolInfoForm = ref<any>(null)
 const formData = ref({
   tokenA: '',
   tokenB: '',
-  poolName: -1,
-  imgUrl: -1
+  poolName: '',
+  imgUrl: ''
 })
 
 const isLoading = ref(false)
@@ -285,7 +285,7 @@ const showCopySuccess = ref(false)
 
 const deployedPool = ref({
   address: '',
-  poolName: -1,
+  poolName: '',
   tokenA: '',
   tokenB: ''
 })
@@ -306,7 +306,7 @@ const tokenOptions = computed(() => {
   const allTokens = contractsStore.allTokens
   return allTokens.map(token => ({
     ...token,
-    label: `${token.address || 'N/A'} - ${token.name || '未命名'}`,
+    label: `${token.address || 'N/A'} - ${uint256ToString(token.name) || '未命名'}`,
   }))
 })
 
@@ -357,8 +357,8 @@ const deployPool = async () => {
     const result = await contractDeployService.deployAMM({
       tokenA: formData.value.tokenA,
       tokenB: formData.value.tokenB,
-      poolName: formData.value.poolName,
-      imgUrl: formData.value.imgUrl
+      poolName: stringToUint256(formData.value.poolName) ,
+      imgUrl: stringToUint256(formData.value.imgUrl)
     })
 
     if (!result.success) {
@@ -379,8 +379,8 @@ const deployPool = async () => {
     formData.value = {
       tokenA: '',
       tokenB: '',
-      poolName: -1,
-      imgUrl: -1
+      poolName: '',
+      imgUrl: ''
     }
     
     // 重置表单验证状态

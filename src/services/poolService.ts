@@ -4,6 +4,7 @@ import connectionService from './connectionService'
 import contractInteractionService from './contractInteractionService'
 import { useContractsStore } from '@/store/contracts'
 import { formatBalance } from '@/utils/formatters'
+import { uint256ToString } from '@/utils/formatters'
 
 export interface PoolInfo {
   address: string
@@ -145,7 +146,7 @@ class PoolService {
       if (!isValid) {
         return {
           address: poolAddress,
-          name: String(poolName),
+          name: uint256ToString(poolName),
           token0: {
             address: tokenAAddress,
             name: 'NaN',
@@ -187,7 +188,7 @@ class PoolService {
 
       return {
         address: poolAddress,
-        name: String(poolName),
+        name: uint256ToString(poolName),
         token0: token0Info,
         token1: token1Info,
         reserve0: reserve0Raw,

@@ -94,7 +94,7 @@ class ContractDeployService {
         owner: ownerAddress,
         name: params.name,
         totalSupply: params.totalSupply,
-        imgUrl: params.imgUrl || 0,
+        imgUrl: params.imgUrl || 0n,
       }
 
       // 添加到store
@@ -179,7 +179,7 @@ class ContractDeployService {
         deployedTime: Date.now(),
         owner: ownerAddress,
         name: params.name,
-        imgUrl: params.imgUrl || 0,
+        imgUrl: params.imgUrl || 0n,
         totalSupply: totalSupply.toString()
       }
 
@@ -277,7 +277,7 @@ class ContractDeployService {
         deployedTime: Date.now(),
         owner: ownerAddress,
         name: params.poolName,
-        imgUrl: params.imgUrl || 0,
+        imgUrl: params.imgUrl || 0n,
         tokenA: params.tokenA,
         tokenB: params.tokenB
       }
@@ -318,47 +318,6 @@ class ContractDeployService {
       return bytecode.startsWith('0x') ? bytecode : '0x' + bytecode
     } catch (error) {
       throw new Error(`无法加载合约bytecode: ${contractType}`)
-    }
-  }
-
-  /**
-   * 将 uint256 转换回字符串
-   * 注意：如果合约直接存储的是字符串（ethers.js 自动转换），则直接返回 toString()
-   */
-  static uint256ToString(value: bigint | string): string {
-    try {
-      // 如果已经是字符串类型，直接返回
-      if (typeof value === 'string' && !value.startsWith('0x')) {
-        return value
-      }
-
-      // 如果是数字或十六进制，尝试转换
-      const numValue = typeof value === 'bigint' ? value : BigInt(value)
-
-      // 如果数值很小（可能是直接存储的字符串），直接返回字符串形式
-      if (numValue < BigInt('0x10000000000000000')) { // 小于一个合理的 bytes32 值
-        return numValue.toString()
-      }
-
-      // 转为 hex string
-      const hexStr = '0x' + numValue.toString(16).padStart(64, '0')
-
-      // 转为 bytes
-      const bytes = ethers.getBytes(hexStr)
-
-      // 移除尾部的0
-      let endIndex = bytes.length
-      while (endIndex > 0 && bytes[endIndex - 1] === 0) {
-        endIndex--
-      }
-
-      // 转为字符串
-      if (endIndex === 0) return ''
-      const trimmedBytes = bytes.slice(0, endIndex)
-      return ethers.toUtf8String(trimmedBytes)
-    } catch (error) {
-      // 失败时返回原始值的字符串形式
-      return String(value)
     }
   }
 }

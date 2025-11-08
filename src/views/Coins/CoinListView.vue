@@ -99,7 +99,7 @@
                       <span class="text-white font-weight-bold">N</span>
                     </v-avatar>
                     <div>
-                      <div class="font-weight-medium">{{ token.name || '未命名' }}</div>
+                      <div class="font-weight-medium">{{ uint256ToString(token.name) || '未命名' }}</div>
                     </div>
                   </div>
                 </td>
@@ -158,7 +158,7 @@
                       <span class="text-white font-weight-bold">W</span>
                     </v-avatar>
                     <div>
-                      <div class="font-weight-medium">{{ token.name || 'Wrapped Token' }}</div>
+                      <div class="font-weight-medium">{{ uint256ToString(token.name) || 'Wrapped Token' }}</div>
                       <div class="text-caption text-medium-emphasis">WBKC</div>
                     </div>
                   </div>
@@ -193,10 +193,11 @@
   </v-container>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useContractsStore } from '@/store/contracts'
+import { uint256ToString } from '@/utils/formatters'
 
 const router = useRouter()
 const contractsStore = useContractsStore()
@@ -209,7 +210,7 @@ const isLoading = ref(false)
 const scanMessage = ref('')
 
 // 格式化地址（显示首尾）
-const formatAddress = (address) => {
+const formatAddress = (address: string) => {
   if (!address) return ''
   return address.slice(0, 6) + '...' + address.slice(-4)
 }
@@ -225,7 +226,7 @@ const filteredErc20 = computed(() => {
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     tokens = tokens.filter(token =>
-      token.name.toString().toLowerCase().includes(query) ||
+      uint256ToString(token.name).toLowerCase().includes(query) ||
       token.address.toLowerCase().includes(query)
     )
   }
@@ -244,7 +245,7 @@ const filteredWrapped = computed(() => {
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     tokens = tokens.filter(token =>
-      token.name.toLowerCase().includes(query) ||
+      uint256ToString(token.name).toLowerCase().includes(query) ||
       token.address.toLowerCase().includes(query)
     )
   }
@@ -253,7 +254,7 @@ const filteredWrapped = computed(() => {
 })
 
 // 导航到代币详情页
-const goToDetail = (address) => {
+const goToDetail = (address: string) => {
   router.push(`/coindetail/${address}`)
 }
 
@@ -263,7 +264,7 @@ const goToDeploy = () => {
 }
 
 // 复制到剪贴板
-const copyToClipboard = async (text) => {
+const copyToClipboard = async (text:string) => {
   try {
     await navigator.clipboard.writeText(text)
     showCopySuccess.value = true
