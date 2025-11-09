@@ -71,7 +71,7 @@
             <thead>
               <tr class="bg-surface-variant">
                 <th class="text-left text-subtitle-2 font-weight-bold">交易对</th>
-                <th class="text-left text-subtitle-2 font-weight-bold">池信息</th>
+                <th class="text-left text-subtitle-2 font-weight-bold">池名称</th>
                 <th class="text-right text-subtitle-2 font-weight-bold">流动性</th>
                 <th class="text-center text-subtitle-2 font-weight-bold">操作</th>
               </tr>
