@@ -23,14 +23,16 @@
       <v-row class="mb-6">
         <v-col cols="12">
           <v-card rounded="lg" elevation="2" class="pa-6">
-            <div class="d-flex align-center mb-4">
-              <v-avatar color="primary" size="56" class="mr-3">
-                <span class="text-white text-h5">{{ "A" }}</span>
-              </v-avatar>
-              <v-avatar color="secondary" size="56" class="mr-4">
-                <span class="text-white text-h5">{{ "B" }}</span>
-              </v-avatar>
-              <div class="flex-grow-1">
+            <div class="d-flex flex-column flex-sm-row align-center align-sm-center mb-4">
+              <div class="d-flex align-center mb-3 mb-sm-0 mr-0 mr-sm-4">
+                <v-avatar color="primary" size="56" class="mr-3">
+                  <span class="text-white text-h5">{{ "A" }}</span>
+                </v-avatar>
+                <v-avatar color="secondary" size="56" class="mr-4">
+                  <span class="text-white text-h5">{{ "B" }}</span>
+                </v-avatar>
+              </div>
+              <div class="flex-grow-1 text-center text-sm-start mb-3 mb-sm-0">
                 <h1 class="text-h4 font-weight-bold">{{ pool.name }}</h1>
                 <div class="text-body-1 text-medium-emphasis">{{ pool.token0.name }}/{{ pool.token1.name }} 流动性池
                 </div>
@@ -39,7 +41,7 @@
                 </v-chip>
               </div>
               <v-btn color="primary" prepend-icon="mdi-refresh" @click="loadPoolInfo" :loading="refreshing"
-                rounded="lg">
+                rounded="lg" class="w-100 w-sm-auto">
                 刷新数据
               </v-btn>
             </div>
@@ -379,5 +381,21 @@ onMounted(() => {
 <style scoped>
 .font-mono {
   font-family: 'Courier New', monospace;
+}
+
+/* 确保 avatar 内的文字居中 */
+:deep(.v-avatar) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+:deep(.v-avatar span) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100%;
+  height: 100%;
+  line-height: 1;
 }
 </style>

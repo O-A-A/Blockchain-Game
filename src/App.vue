@@ -103,7 +103,7 @@ onMounted(async () => {
       <v-container class="d-flex align-center px-4 py-0 mx-auto">
         <div class="d-flex align-center" style="cursor: pointer" @click="$router.push('/home')">
           <img src="@/assets/logo.png" alt="Logo" class="mr-3" style="width: 32px; height: 32px;">
-          <v-app-bar-title class="font-weight-bold text-body-1">BrokerFi Exchange</v-app-bar-title>
+          <v-app-bar-title class="font-weight-bold text-body-1">DEX</v-app-bar-title>
         </div>
 
         <!-- 桌面版导航 -->

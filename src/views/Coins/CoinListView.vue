@@ -1,23 +1,23 @@
 <template>
   <v-container class="py-6" style="max-width: 80%">
-    <!-- 顶部标题栏 -->
-    <v-row align="center" class="mb-6">
-      <v-col cols="12" md="8">
-        <div>
-          <h1 class="text-h4 font-weight-bold mb-2">代币市场</h1>
-          <p class="text-body-2 text-medium-emphasis">浏览所有可用的代币和发行新代币</p>
+        <!-- 顶部标题栏 -->
+        <v-row class="mb-6">
+      <v-col cols="12" class="text-center">
+        <h1 class="text-h4 font-weight-bold mb-2">代币市场</h1>
+        <p class="text-body-2 text-medium-emphasis">
+          浏览所有可用的代币和发行新代币
+        </p>
+        <div class="d-flex justify-center mt-4">
+          <v-btn
+            color="primary"
+            size="large"
+            prepend-icon="mdi-plus"
+            @click="goToDeploy"
+            rounded="lg"
+          >
+            发行新代币
+          </v-btn>
         </div>
-      </v-col>
-      <v-col cols="12" md="4" class="text-right">
-        <v-btn
-          color="primary"
-          size="large"
-          prepend-icon="mdi-plus"
-          @click="goToDeploy"
-          rounded="lg"
-        >
-          发行新代币
-        </v-btn>
       </v-col>
     </v-row>
 
