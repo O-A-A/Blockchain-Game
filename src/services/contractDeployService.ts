@@ -316,8 +316,10 @@ class ContractDeployService {
 
       // 确保bytecode以0x开头
       return bytecode.startsWith('0x') ? bytecode : '0x' + bytecode
-    } catch (error) {
-      throw new Error(`无法加载合约bytecode: ${contractType}`)
+    } catch (error: any) {
+      const message = error instanceof Error ? error.message : String(error)
+      // 包含原始错误信息以便排查
+      throw new Error(`无法加载合约bytecode: ${contractType} - ${message}`)
     }
   }
 }

@@ -38,17 +38,17 @@ export const useContractsStore = defineStore('contracts', () => {
   
   // ERC20代币列表
   const erc20Tokens = computed(() => 
-    contracts.value.filter(c => c && c.type === 0) as ERC20ContractInfo[]
+    contracts.value.filter(c => c?.type === 0) as ERC20ContractInfo[]
   )
   
   // WBKC代币列表
   const wbkcTokens = computed(() => 
-    contracts.value.filter(c => c && c.type === 1) as WBKCContractInfo[]
+    contracts.value.filter(c => c?.type === 1) as WBKCContractInfo[]
   )
   
   // AMM池子列表
   const ammPools = computed(() => 
-    contracts.value.filter(c => c && c.type === 2) as AMMContractInfo[]
+    contracts.value.filter(c => c?.type === 2) as AMMContractInfo[]
   )
   
   // 所有代币（ERC20 + WBKC）
@@ -75,12 +75,12 @@ export const useContractsStore = defineStore('contracts', () => {
    */
   function addContract(contract: ContractInfo) {
     // 验证传入的合约对象
-    if (!contract || !contract.address) {
+    if (!contract?.address) {
       return
     }
 
     // 检查是否已存在（过滤掉 null 元素）
-    const exists = contracts.value.some(c => c && c.address && c.address.toLowerCase() === contract.address.toLowerCase())
+    const exists = contracts.value.some(c => c?.address?.toLowerCase() === contract.address.toLowerCase())
     if (exists) {
       return
     }
@@ -93,19 +93,19 @@ export const useContractsStore = defineStore('contracts', () => {
    * 批量添加合约
    */
   function addContracts(newContracts: ContractInfo[]) {
-    newContracts.forEach(contract => {
+    for (const contract of newContracts) {
       // 跳过无效的合约对象
-      if (!contract || !contract.address) {
-        return
+      if (!contract?.address) {
+        continue
       }
 
       const exists = contracts.value.some(
-        c => c && c.address && c.address.toLowerCase() === contract.address.toLowerCase()
+        c => c?.address?.toLowerCase() === contract.address.toLowerCase()
       )
       if (!exists) {
         contracts.value.push(contract)
       }
-    })
+    }
     saveToStorage()
   }
   
@@ -114,7 +114,7 @@ export const useContractsStore = defineStore('contracts', () => {
    */
   function updateContract(address: string, updates: Partial<ContractInfo>) {
     const index = contracts.value.findIndex(
-      c => c && c.address && c.address.toLowerCase() === address.toLowerCase()
+      c => c?.address?.toLowerCase() === address.toLowerCase()
     )
     if (index !== -1) {
       contracts.value[index] = { ...contracts.value[index], ...updates } as ContractInfo
@@ -127,7 +127,7 @@ export const useContractsStore = defineStore('contracts', () => {
    */
   function removeContract(address: string) {
     contracts.value = contracts.value.filter(
-      c => c && c.address && c.address.toLowerCase() !== address.toLowerCase()
+      c => c?.address?.toLowerCase() !== address.toLowerCase()
     )
     saveToStorage()
   }
@@ -137,7 +137,7 @@ export const useContractsStore = defineStore('contracts', () => {
    */
   function getContractByAddress(address: string): ContractInfo | undefined {
     return contracts.value.find(
-      c => c && c.address && c.address.toLowerCase() === address.toLowerCase()
+      c => c?.address?.toLowerCase() === address.toLowerCase()
     )
   }
   
@@ -145,7 +145,7 @@ export const useContractsStore = defineStore('contracts', () => {
    * 根据类型获取合约列表
    */
   function getContractsByType(type: ContractType): ContractInfo[] {
-    return contracts.value.filter(c => c && c.type === type)
+    return contracts.value.filter(c => c?.type === type)
   }
   
   /**
@@ -200,6 +200,7 @@ export const useContractsStore = defineStore('contracts', () => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
     } catch (err) {
       error.value = '保存失败'
+      console.log(err)
     }
   }
   
@@ -212,7 +213,7 @@ export const useContractsStore = defineStore('contracts', () => {
       if (stored) {
         const data = JSON.parse(stored)
         // 过滤掉 null 或无效的合约对象
-        const validContracts = (data.contracts || []).filter((c: any) => c && c.address)
+        const validContracts = (data.contracts || []).filter((c: any) => c?.address)
         contracts.value = validContracts
         lastScanBlock.value = data.lastScanBlock || 0
       }
@@ -220,10 +221,11 @@ export const useContractsStore = defineStore('contracts', () => {
       // 加载最后扫描区块
       const lastBlock = localStorage.getItem(LAST_SCAN_BLOCK_KEY)
       if (lastBlock) {
-        lastScanBlock.value = parseInt(lastBlock)
+        lastScanBlock.value = Number.parseInt(lastBlock)
       }
     } catch (err) {
       error.value = '加载失败'
+      console.log(err)
     }
   }
   
@@ -253,6 +255,7 @@ export const useContractsStore = defineStore('contracts', () => {
       return false
     } catch (err) {
       error.value = '导入失败'
+      console.log(err)
       return false
     }
   }

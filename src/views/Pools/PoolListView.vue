@@ -1,5 +1,5 @@
 <template>
-  <v-container class="py-6" style="max-width: 80%">
+  <v-container class="py-6" style="max-width: 98%">
         <!-- 顶部标题栏 -->
         <v-row class="mb-6">
       <v-col cols="12" class="text-center">

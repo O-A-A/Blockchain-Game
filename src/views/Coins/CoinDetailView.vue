@@ -1,5 +1,5 @@
 <template>
-  <v-container class="py-6" style="max-width: 80%">
+  <v-container class="py-6" style="max-width: 98%">
     <!-- 加载状态 -->
     <v-card v-if="loading" rounded="lg" elevation="2" class="pa-8 text-center">
       <v-progress-circular indeterminate color="primary" size="64" class="mb-4"></v-progress-circular>

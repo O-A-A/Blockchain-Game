@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import contractInteractionService from '@/services/contractInteractionService'
 
 export interface SwapResult {
@@ -9,8 +9,8 @@ export interface SwapResult {
 
 export const useWalletStore = defineStore('wallet', () => {
     // 状态
-    const address = ref<string | null>(localStorage.getItem('walletAddress')) // 从本地存储初始化地址
-    const isLoggedIn = ref<boolean>(!!localStorage.getItem('walletAddress')) // 根据本地存储判断初始登录状态
+    const address = ref<string | null>("")
+    const isLoggedIn = ref(false)
     const wbkcBalance = ref<string>('0') // wBKC余额
     const e20cBalance = ref<string>('0') // E20C余额
     const isLoading = ref<boolean>(false)
@@ -20,11 +20,6 @@ export const useWalletStore = defineStore('wallet', () => {
     // 设置钱包地址
     const setAddress = (newAddress: string | null) => {
         address.value = newAddress;
-        if (newAddress) {
-            localStorage.setItem('walletAddress', newAddress);
-        } else {
-            localStorage.removeItem('walletAddress');
-        }
         isLoggedIn.value = !!newAddress; // 地址存在即视为登录
     }
 
@@ -76,6 +71,7 @@ export const useWalletStore = defineStore('wallet', () => {
             
         } catch (err: any) {
             error.value = '获取余额失败，请稍后再试';
+            console.log(err)
         } finally {
             isLoading.value = false;
         }
@@ -83,41 +79,12 @@ export const useWalletStore = defineStore('wallet', () => {
 
     // 初始化钱包
     const init = async () => {
-        const storedAddress = localStorage.getItem('walletAddress');
-        if (storedAddress) {
-            address.value = storedAddress;
-            isLoggedIn.value = true;
-            
-            // 恢复交易记录
-            loadTransactionsFromStorage();
-            
-            // 刷新余额（需要先连接到区块链）
-            await refreshBalances();
-        } else {
-            address.value = null;
-            isLoggedIn.value = false;
-        }
-    }
-    
-    // 从localStorage加载交易记录
-    const loadTransactionsFromStorage = () => {
-        try {
-            const savedTxs = localStorage.getItem(`transactions_${address.value}`);
-            if (savedTxs) {
-                transactions.value = JSON.parse(savedTxs);
-            }
-        } catch (error) {
-            // 加载失败，忽略
-        }
+        address.value = "";
+        isLoggedIn.value = false;
     }
 
     // 重置钱包状态
     const resetWalletState = () => {
-        // 清除当前地址的交易记录
-        if (address.value) {
-            localStorage.removeItem(`transactions_${address.value}`);
-        }
-        
         setAddress(null);
         isLoggedIn.value = false;
         wbkcBalance.value = '0';
@@ -128,10 +95,6 @@ export const useWalletStore = defineStore('wallet', () => {
         
         // 清除所有会话和持久化数据
         sessionStorage.clear();
-        localStorage.removeItem('walletPassword');
-        localStorage.removeItem('nodeUrl');
-        localStorage.removeItem('encryptedPrivateKey');
-        localStorage.removeItem('walletAddress');
     }
 
     return {

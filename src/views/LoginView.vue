@@ -76,7 +76,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useWalletStore } from '@/store/wallet'
 import connectionService from '@/services/connectionService'
@@ -87,28 +87,6 @@ const walletStore = useWalletStore()
 const isLoading = ref(false)
 const error = ref('')
 const connectedAddress = ref('')
-
-// 页面加载时尝试恢复会话
-
-onMounted(async () => {
-  isLoading.value = true
-  try {
-    const restored = await connectionService.restoreFromSession()
-    if (restored) {
-      const address = connectionService.getAddress()
-      walletStore.setAddress(address)
-      walletStore.setLoggedIn(true)
-      connectedAddress.value = address
-      console.log('会话恢复成功，跳转到 Dashboard')
-      router.replace('/dashboard')
-    }
-  } catch (err) {
-    // 恢复失败，停留在登录页
-    console.log('无法自动恢复会话，等待用户手动连接。')
-  } finally {
-    isLoading.value = false
-  }
-})
 
 /**
  * 连接钱包
