@@ -1,0 +1,42 @@
+[
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "tokenId", "type": "uint256" }
+    ],
+    "name": "mintNFT",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "player", "type": "address" }
+    ],
+    "name": "getPlayer",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "uint256", "name": "id", "type": "uint256" },
+          { "internalType": "uint256", "name": "level", "type": "uint256" },
+          { "internalType": "uint256", "name": "balance", "type": "uint256" },
+          { "internalType": "uint256[]", "name": "nftIds", "type": "uint256[]" }
+        ],
+        "internalType": "tuple",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "playerId", "type": "uint256" },
+      { "internalType": "uint256", "name": "newLevel", "type": "uint256" }
+    ],
+    "name": "updatePlayerLevel",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]
